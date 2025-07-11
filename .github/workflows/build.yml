@@ -14,15 +14,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # 更新到 v4
 
       - name: Set up CMake
-        uses: actions/setup-cmake@v1
+        uses: lukka/run-cmake@v4  # 替换为兼容的最新版本
         with:
-          cmake-version: '3.31'
-
-      - name: Configure CMake
-        run: cmake -S crossbuild -B build  # 指定源码目录为 crossbuild
+          cmakeVersion: '3.31'
+          buildDirectory: '${{ github.workspace }}/build'
+          cmakeAppendedArgs: '-S crossbuild'  # 指定源码目录
 
       - name: Build
         run: cmake --build build --config Release
@@ -31,28 +30,26 @@ jobs:
         id: run
         shell: bash
         run: |
-          # 确定可执行文件路径（根据操作系统调整）
+          # 确定可执行文件路径
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            EXECUTABLE="./build/Release/crossbuild.exe"  # Windows 可执行文件
+            EXECUTABLE="./build/Release/crossbuild.exe"
           else
-            EXECUTABLE="./build/crossbuild"  # Linux/macOS 可执行文件
+            EXECUTABLE="./build/crossbuild"
           fi
           
-          # 确保可执行文件存在
+          # 执行并捕获输出
           if [ -f "$EXECUTABLE" ]; then
-            # 运行程序并将输出和错误重定向到文件
             "$EXECUTABLE" > output.txt 2>&1
-            echo "程序运行成功"
             echo "exit_code=0" >> $GITHUB_ENV
           else
-            echo "可执行文件未找到" > output.txt
+            echo "Executable not found!" > output.txt
             echo "exit_code=1" >> $GITHUB_ENV
           fi
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # 更新到 v4
         with:
-          name: crossbuild-${{ matrix.os }}  # 重命名 artifact
+          name: crossbuild-${{ matrix.os }}
           path: |
             build/crossbuild
             build/Release/crossbuild.exe
