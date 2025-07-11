@@ -32,7 +32,7 @@ jobs:
         run: |
           # 确定可执行文件路径
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            EXECUTABLE="./build/Release/crossbuild.exe"
+            EXECUTABLE="./build/crossbuild.exe"
           else
             EXECUTABLE="./build/crossbuild"
           fi
