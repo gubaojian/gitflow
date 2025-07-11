@@ -21,7 +21,7 @@ jobs:
         with:
           cmakeVersion: '3.31'
           buildDirectory: '${{ github.workspace }}/build'
-          cmakeAppendedArgs: '-S crossbuild'  # 指定源码目录
+          cmakeListsTxtPath: '${{ github.workspace }}/crossbuild/CMakeLists.txt'
 
       - name: Build
         run: cmake --build build --config Release
