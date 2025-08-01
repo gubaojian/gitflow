@@ -52,6 +52,9 @@ jobs:
           path: |
             build/crossbuild
             build/crossbuild.exe
+            build/libencrypt.so
+            build/libencrypt.dylib
+            build/libencrypt.dll
             output.txt
           retention-days: 7
 
