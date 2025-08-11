@@ -36,6 +36,7 @@ namespace camel {
          */
         std::string base64_decode(const std::string &input);
         std::string base64_decode_url_safe(const std::string &input);
+        std::string base64_decode_url_safe(const std::string_view &input);
     }
 }
 

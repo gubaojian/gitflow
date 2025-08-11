@@ -14,9 +14,11 @@
 namespace camel {
     namespace crypto {
 
-        constexpr std::string_view  RSA_PKCS1Padding = "PKCS1Padding";
-        constexpr std::string_view  RSA_OAEPPadding = "OAEPPadding";
-        constexpr std::string_view  RSA_OAEPwithSHA_256andMGF1Padding = "OAEPwithSHA-256andMGF1Padding";
+        constexpr auto  RSA_PKCS1Padding = "PKCS1Padding";
+        constexpr auto  RSA_OAEPPadding = "OAEPPadding";
+        constexpr auto  RSA_OAEPwithSHA_256andMGF1Padding = "OAEPwithSHA-256andMGF1Padding";
+        constexpr auto  RSA_OAEPwithSHA_384andMGF1Padding = "OAEPwithSHA-384andMGF1Padding";
+        constexpr auto  RSA_OAEPwithSHA_512andMGF1Padding = "OAEPwithSHA-512andMGF1Padding";
 
         class RSAKeyPairGenerator {
             public:
@@ -56,7 +58,7 @@ namespace camel {
                 */
                explicit RSAPublicKeyEncryptor(const std::string& publicKey,
                     const std::string& format = "pem",
-                    const std::string& paddings="PKCS1Padding");
+                    const std::string& paddings= RSA_PKCS1Padding);
 
                ~RSAPublicKeyEncryptor() {
                    if (pKey != nullptr) {
@@ -90,7 +92,7 @@ namespace camel {
                */
             explicit RSAPrivateKeyDecryptor(const std::string& publicKey,
                   const std::string& format = "pem",
-                  const std::string& paddings="PKCS1Padding");
+                  const std::string& paddings = RSA_PKCS1Padding);
             ~RSAPrivateKeyDecryptor() {
                 if (pKey != nullptr) {
                     EVP_PKEY_free(pKey);
@@ -98,9 +100,9 @@ namespace camel {
                 }
             }
         public:
-            std::string decrypt(const std::string_view& encryptText) const;
-            std::string decryptFromBase64(const std::string_view& base64EncryptText) const;
-            std::string decryptFromHex(const std::string_view& hexEncryptText) const;
+            std::string decrypt(const std::string_view& encryptedData) const;
+            std::string decryptFromBase64(const std::string_view& base64EncryptedText) const;
+            std::string decryptFromHex(const std::string_view& hexEncryptedText) const;
         private:
             EVP_PKEY* pKey = nullptr;
             std::string privateKey;

@@ -267,30 +267,36 @@ namespace camel {
         EVP_PKEY* RSAPrivateKeyFromDer(const std::string& derKey) {
             return nullptr;
         }
+
+        int maxRsaEncryptPlainTextSize(EVP_PKEY* pkey, const std::string& paddings) {
+            if (paddings == RSA_OAEPPadding) {
+                return (EVP_PKEY_bits(pkey) / 8) - 2*20 -2;
+            }
+            if (paddings == RSA_OAEPwithSHA_256andMGF1Padding) {
+                return (EVP_PKEY_bits(pkey) / 8) - 2*32 - 2;
+            }
+
+            if (paddings == RSA_OAEPwithSHA_384andMGF1Padding) {
+                return (EVP_PKEY_bits(pkey) / 8) - 2*48 - 2;
+            }
+
+            if (paddings == RSA_OAEPwithSHA_512andMGF1Padding) {
+                return (EVP_PKEY_bits(pkey) / 8) - 2*64 - 2;
+            }
+
+            return (EVP_PKEY_bits(pkey) / 8) - 11;//
+        }
+
+        int rsaEncryptBlockSize(EVP_PKEY* pkey, const std::string& paddings) {
+            return (EVP_PKEY_bits(pkey) / 8);
+        }
     }
 }
 
 
 namespace camel {
     namespace crypto {
-        int maxRsaBlockSize(EVP_PKEY* pkey, const std::string& paddings) {
-            if (paddings == "OAEPPadding") {
-                return (EVP_PKEY_bits(pkey) / 8) - 42;
-            }
-            if (paddings == "OAEPwithSHA-256andMGF1Padding") {
-                return (EVP_PKEY_bits(pkey) / 8) - 2*32 - 2;
-            }
 
-            if (paddings == "OAEPwithSHA-384andMGF1Padding") {
-                return (EVP_PKEY_bits(pkey) / 8) - 2*48 - 2;
-            }
-
-            if (paddings == "OAEPwithSHA-512andMGF1Padding") {
-                return (EVP_PKEY_bits(pkey) / 8) - 2*64 - 2;
-            }
-
-            return (EVP_PKEY_bits(pkey) / 8) - 11;//
-        }
 
         RSAPublicKeyEncryptor::RSAPublicKeyEncryptor(const std::string &publicKey, const std::string &format, const std::string &paddings) {
             this->paddings = paddings;
@@ -321,32 +327,35 @@ namespace camel {
             }
 
             OSSL_PARAM params[5];
-            if (paddings == "OAEPPadding") {
+            if (paddings == RSA_OAEPPadding) {
                 int rsa_pad = RSA_PKCS1_OAEP_PADDING;
+                std::string shaName = "SHA-1";
                 params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
-                params[1] = OSSL_PARAM_END;
-            } else if (paddings == "OAEPwithSHA-256andMGF1Padding") {
+                params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
+                params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
+                params[3] = OSSL_PARAM_END;
+            } else if (paddings == RSA_OAEPwithSHA_256andMGF1Padding) {
                 int rsa_pad = RSA_PKCS1_OAEP_PADDING;
                 std::string shaName = "SHA-256";
                 params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
                 params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
                 params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
                 params[3] = OSSL_PARAM_END;
-            }else if (paddings == "OAEPwithSHA-384andMGF1Padding") {
+            } else if (paddings == RSA_OAEPwithSHA_384andMGF1Padding) {
                 int rsa_pad = RSA_PKCS1_OAEP_PADDING;
                 std::string shaName = "SHA-384";
                 params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
                 params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
                 params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
                 params[3] = OSSL_PARAM_END;
-            }else if (paddings == "OAEPwithSHA-512andMGF1Padding") {
+            } else if (paddings == RSA_OAEPwithSHA_512andMGF1Padding) {
                 int rsa_pad = RSA_PKCS1_OAEP_PADDING;
                 std::string shaName = "SHA-512";
                 params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
                 params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
                 params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
                 params[3] = OSSL_PARAM_END;
-            }else {
+            } else {
                 int rsa_pad = RSA_PKCS1_PADDING;
                 params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
                 params[1] = OSSL_PARAM_END;
@@ -361,13 +370,13 @@ namespace camel {
             std::string buffer;
             int bigBufferSize = plainText.size()*2;
             buffer.resize(std::max(bigBufferSize, 2048));
-            int maxSplitLen = maxRsaBlockSize(pKey, paddings);// max block size
+            int maxSplitLen = maxRsaEncryptPlainTextSize(pKey, paddings);// max block size
             size_t totalLength = 0;
             unsigned char *in = (unsigned char *)plainText.data();
             unsigned char *out = (unsigned char*) buffer.data();
             for (int remain = plainText.length(); remain > 0; remain -= maxSplitLen) {
-                size_t outlen = 0;
                 size_t inlen = std::min(remain, maxSplitLen);
+                size_t outlen = buffer.size() - totalLength;
                 if (EVP_PKEY_encrypt(ctx, out, &outlen, in, inlen) <= 0) {
                     std::cerr << "RSAPublicKeyEncryptor::encrypt() Failed to EVP_PKEY_encrypt " << std::endl;
                     printOpenSSLError();
@@ -420,5 +429,98 @@ namespace camel {
                 this->pKey = RSAPrivateKeyFromPem(privateKey);
             }
         }
+
+        std::string RSAPrivateKeyDecryptor::decrypt(const std::string_view &encryptedData) const {
+            if (pKey == nullptr || encryptedData.empty()) {
+                return "";
+            }
+            EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(pKey, nullptr);
+            if (ctx == nullptr) {
+                std::cerr << "RSAPrivateKeyDecryptor::decrypt() Failed to create EVP_PKEY_CTX_new " << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+
+            OSSL_PARAM params[5];
+            if (paddings == RSA_OAEPPadding) {
+                int rsa_pad = RSA_PKCS1_OAEP_PADDING;
+                std::string shaName = "SHA-1";
+                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
+                params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
+                params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
+                params[3] = OSSL_PARAM_END;
+            } else if (paddings == RSA_OAEPwithSHA_256andMGF1Padding) {
+                int rsa_pad = RSA_PKCS1_OAEP_PADDING;
+                std::string shaName = "SHA-256";
+                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
+                params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
+                params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
+                params[3] = OSSL_PARAM_END;
+            }else if (paddings == RSA_OAEPwithSHA_384andMGF1Padding) {
+                int rsa_pad = RSA_PKCS1_OAEP_PADDING;
+                std::string shaName = "SHA-384";
+                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
+                params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
+                params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
+                params[3] = OSSL_PARAM_END;
+            }else if (paddings == RSA_OAEPwithSHA_512andMGF1Padding) {
+                int rsa_pad = RSA_PKCS1_OAEP_PADDING;
+                std::string shaName = "SHA-512";
+                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
+                params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
+                params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
+                params[3] = OSSL_PARAM_END;
+            }else {
+                int rsa_pad = RSA_PKCS1_PADDING;
+                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
+                params[1] = OSSL_PARAM_END;
+            }
+
+            if (EVP_PKEY_decrypt_init_ex(ctx, params) <= 0) {
+                std::cerr << "RSAPrivateKeyDecryptor::decrypt() Failed to EVP_PKEY_encrypt_init_ex " << std::endl;
+                printOpenSSLError();
+                EVP_PKEY_CTX_free(ctx);
+                return "";
+            }
+            std::string buffer;
+            int bigBufferSize = encryptedData.size();
+            buffer.resize(std::max(bigBufferSize, 1024));
+            int rsaBlockSize = rsaEncryptBlockSize(pKey, paddings);// max block size
+            if (encryptedData.length() % rsaBlockSize != 0) {
+                std::cerr << "RSAPrivateKeyDecryptor::decrypt() invalid rsa encrypt data " << std::endl;
+                return "";
+            }
+            size_t totalLength = 0;
+            unsigned char *in = (unsigned char *)encryptedData.data();
+            unsigned char *out = (unsigned char*) buffer.data();
+            for (int remain = encryptedData.length(); remain > 0; remain -= rsaBlockSize) {
+                size_t outlen =  buffer.size() - totalLength;
+                size_t inlen = std::min(remain, rsaBlockSize);
+                if (EVP_PKEY_decrypt(ctx, out, &outlen, in, inlen) <= 0) {
+                    std::cerr << "RSAPrivateKeyDecryptor::decrypt() Failed to EVP_PKEY_decrypt " << std::endl;
+                    printOpenSSLError();
+                    EVP_PKEY_CTX_free(ctx);
+                    return "";
+                }
+                out += outlen;
+                in += inlen;
+                totalLength += outlen;
+            }
+
+            buffer.resize(totalLength);
+
+            EVP_PKEY_CTX_free(ctx);
+
+            return buffer;
+        }
+
+        std::string RSAPrivateKeyDecryptor::decryptFromHex(const std::string_view &encryptedText) const {
+            return decrypt(hex_decode(encryptedText));
+        }
+
+        std::string RSAPrivateKeyDecryptor::decryptFromBase64(const std::string_view &encryptedText) const {
+            return decrypt(base64_decode_url_safe(encryptedText));
+        }
+
     }
 }

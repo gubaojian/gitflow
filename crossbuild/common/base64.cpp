@@ -82,7 +82,7 @@ namespace camel {
             return result;
         }
 
-        std::string base64_decode_std(const std::string &input) {
+        std::string base64_decode_std(const std::string_view &input) {
             if (input.empty()) {
                 return "";
             }
@@ -117,11 +117,17 @@ namespace camel {
             return result;
         }
 
+        std::string base64_decode_std(const std::string &input) {
+            return base64_decode_std(std::string_view(input));
+        }
+
         std::string base64_decode(const std::string &input) {
             return base64_decode_std(input);
         }
-
         std::string base64_decode_url_safe(const std::string &input) {
+            return base64_decode_url_safe(std::string_view(input));
+        }
+        std::string base64_decode_url_safe(const std::string_view &input) {
             if (input.empty()) {
                 return "";
             }
@@ -133,7 +139,7 @@ namespace camel {
                 }
             }
             if (needTransform) {
-                std::string source = input;
+                std::string source(input);
                 for (size_t i = 0; i < source.length(); ++i) {
                     if (source[i] == '-') {
                         source[i] = '+';
@@ -153,7 +159,7 @@ namespace camel {
             }
             size_t len = input.size();
             if (len % 4 != 0) {
-                std::string source = input;
+                std::string source(input);
                 size_t pad = 4 - (len % 4);
                 if (pad == 3) { // 非法情况：无法通过填充修复
                     return "";

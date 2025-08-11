@@ -28,7 +28,12 @@ namespace camel {
             BN_free(bn);
             return result;
         }
+
         std::string hex_decode(const std::string &input) {
+            return hex_decode(std::string_view(input));
+        }
+
+        std::string hex_decode(const std::string_view &input) {
             std::string result;
             BIGNUM *bn = BN_new();
             if (bn == nullptr) {
