@@ -10,7 +10,8 @@ namespace camel {
     namespace crypto {
         void demoRsaGenerateKey();
         void demoRsaEncrypt();
-        void demoRsaPerf();
+        void demoRsaCryptPerf();
+        void demoRsaDecryptPerf();
     }
 }
 

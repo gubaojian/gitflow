@@ -29,7 +29,8 @@ void runAllTests() {
 void runAllDemos() {
    demoRsaGenerateKey();
    demoRsaEncrypt();
-   demoRsaPerf();
+   demoRsaCryptPerf();
+   demoRsaDecryptPerf();
 }
 
 int main() {

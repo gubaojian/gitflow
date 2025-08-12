@@ -29,7 +29,7 @@ namespace camel {
                 auto base64NewLine =  base64_encode_new_line(longSource);
                 passed = passed && base64NoLine.find('\n') == std::string::npos;
                 passed = passed &&  base64NoLine.find('+') != std::string::npos;
-                passed = passed && base64UrlSafe.find('=') == std::string::npos;
+                passed = passed && base64UrlSafe.find('=') != std::string::npos;
                 passed = passed && base64UrlSafe.find('+') == std::string::npos;
                 passed = passed && base64UrlSafe.find('/') == std::string::npos;
                 passed = passed && base64NoLine != base64NewLine;

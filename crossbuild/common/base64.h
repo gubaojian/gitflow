@@ -18,7 +18,8 @@ namespace camel {
         /**
         * @brief URL 安全的 Base64 编码（无换行符，移除填充符）
         * @param input 待编码的原始二进制数据
-        * @return 编码后的 URL 安全 Base64 字符串（+ 替换为 -，/ 替换为 _，无 = 填充符）
+        * @return 编码后的 URL 安全 Base64 字符串（+ 替换为 -，/ 替换为 _，包含 = 填充符）
+        * 参考：https://github.com/gubaojian/ServerTechTest/blob/main/Base64Compat/src/main/java/org/efurture/test/Main.java
         */
         std::string base64_encode_url_safe(const std::string &input);
 
@@ -37,6 +38,9 @@ namespace camel {
         std::string base64_decode(const std::string &input);
         std::string base64_decode_url_safe(const std::string &input);
         std::string base64_decode_url_safe(const std::string_view &input);
+
+        void base64_padding(std::string &input);
+        void base64_remove_padding(std::string &input);
     }
 }
 

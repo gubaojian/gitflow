@@ -44,9 +44,6 @@ namespace camel {
                     source[i] = '_';
                 }
             }
-            while (!source.empty() && source[source.length() - 1] == '=') {
-                source.resize(source.length() - 1);
-            }
             return source;
         }
 
@@ -147,29 +144,27 @@ namespace camel {
                         source[i] = '/';
                     }
                 }
-                size_t len = source.size();
-                if (len % 4 != 0) {
-                    size_t pad = 4 - (len % 4);
-                    if (pad == 3) { // 非法情况：无法通过填充修复
-                        return "";
-                    }
-                    source.append(std::string(pad, '='));
-                    return base64_decode_std(source);
-                }
-            }
-            size_t len = input.size();
-            if (len % 4 != 0) {
-                std::string source(input);
-                size_t pad = 4 - (len % 4);
-                if (pad == 3) { // 非法情况：无法通过填充修复
-                    return "";
-                }
-                source.append(std::string(pad, '='));
                 return base64_decode_std(source);
             }
             return base64_decode_std(input);
         }
 
+        void base64_padding(std::string &input) {
+            size_t len = input.size();
+            if (len % 4 != 0) {
+                size_t pad = 4 - (len % 4);
+                if (pad == 3) { // 非法情况：无法通过填充修复
+                    return;
+                }
+                input.append(std::string(pad, '='));
+            }
+        }
+
+        void base64_remove_padding(std::string &source) {
+            while (!source.empty() && source[source.length() - 1] == '=') {
+                source.resize(source.length() - 1);
+            }
+        }
 
     }
 }

@@ -9,6 +9,157 @@
 #include "base64.h"
 #include "hex.h"
 
+
+namespace camel {
+    namespace crypto {
+        EVP_PKEY* RSAPublicKeyFromPem(const std::string& pemKey) {
+            EVP_PKEY* key = nullptr;
+            BIO* bio = BIO_new_mem_buf(pemKey.data(), static_cast<int>(pemKey.size()));
+            if (!bio) {
+                std::cerr << "RSAPublicKeyFromPem Failed to create memory BIO" << std::endl;
+                printOpenSSLError();
+                return key;
+            }
+
+            if (!PEM_read_bio_PUBKEY(bio, &key, nullptr, nullptr)) {
+                std::cerr << "RSAPublicKeyFromPem Failed to PEM_read_bio_PUBKEY " << std::endl;
+                printOpenSSLError();
+                BIO_free(bio);
+                return key;
+            }
+            BIO_free(bio);
+            return key;
+        }
+
+        EVP_PKEY* RSAPublicKeyFromBase64(const std::string& base64Key) {
+            return RSAPublicKeyFromDer(base64_decode_url_safe(base64Key));
+        }
+
+        EVP_PKEY* RSAPublicKeyFromHex(const std::string& hexKey) {
+            return  RSAPublicKeyFromDer(hex_decode(hexKey));
+        }
+
+        EVP_PKEY* RSAPublicKeyFromDer(const std::string& derKey) {
+            EVP_PKEY* key = nullptr;
+            const unsigned char *in = (const unsigned char *)derKey.data();
+            long length = derKey.size();
+            if (d2i_PUBKEY(&key, &in, length) == nullptr) {
+                std::cerr << "RSAPublicKeyFromDer Failed to d2i_PUBKEY " << std::endl;
+                printOpenSSLError();
+                return nullptr;
+            }
+            return key;
+        }
+
+        EVP_PKEY* RSAPublicKeyFromDerByBio(const std::string& derKey) {
+            EVP_PKEY* key = nullptr;
+            BIO* bio = BIO_new_mem_buf(derKey.data(), static_cast<int>(derKey.size()));
+            if (!bio) {
+                std::cerr << "RSAPublicKeyFromDer Failed to create memory BIO" << std::endl;
+                printOpenSSLError();
+                return key;
+            }
+            if (d2i_PUBKEY_bio(bio, &key) == nullptr) {
+                std::cerr << "RSAPublicKeyFromDer Failed to d2i_PUBKEY_bio " << std::endl;
+                printOpenSSLError();
+                BIO_free(bio);
+                return key;
+            }
+            BIO_free(bio);
+            return key;
+        }
+
+        EVP_PKEY* RSAPrivateKeyFromPem(const std::string& pemKey) {
+            EVP_PKEY* key = nullptr;
+            BIO* bio = BIO_new_mem_buf(pemKey.data(), static_cast<int>(pemKey.size()));
+            if (!bio) {
+                std::cerr << "RSAPrivateKeyFromPem Failed to create memory BIO" << std::endl;
+                printOpenSSLError();
+                return key;
+            }
+            if (!PEM_read_bio_PrivateKey(bio, &key, nullptr, nullptr)) {
+                std::cerr << "RSAPrivateKeyFromPem Failed to PEM_read_bio_PrivateKey " << std::endl;
+                printOpenSSLError();
+                BIO_free(bio);
+                return key;
+            }
+            BIO_free(bio);
+            return key;
+        }
+
+        EVP_PKEY* RSAPrivateKeyFromDer(const std::string& derKey) {
+            EVP_PKEY* key = nullptr;
+            const unsigned char *in = (const unsigned char *)derKey.data();
+            long length = derKey.size();
+            if (d2i_PrivateKey(EVP_PKEY_RSA, &key, &in, length) == nullptr) {
+                std::cerr << "RSAPublicKeyFromDer Failed to d2i_PrivateKey " << std::endl;
+                printOpenSSLError();
+                return nullptr;
+            }
+            return key;
+        }
+
+        EVP_PKEY* RSAPrivateKeyFromDerByBio(const std::string& derKey) {
+            EVP_PKEY* key = nullptr;
+            BIO* bio = BIO_new_mem_buf(derKey.data(), static_cast<int>(derKey.size()));
+            if (!bio) {
+                std::cerr << "RSAPrivateKeyFromDerByBio Failed to create memory BIO" << std::endl;
+                printOpenSSLError();
+                return key;
+            }
+            if (d2i_PrivateKey_bio(bio, &key) == nullptr) {
+                std::cerr << "RSAPrivateKeyFromDerByBio Failed to d2i_PrivateKey_bio " << std::endl;
+                printOpenSSLError();
+                BIO_free(bio);
+                return key;
+            }
+            BIO_free(bio);
+            return key;
+        }
+
+
+        EVP_PKEY* RSAPrivateKeyFromBase64(const std::string& base64Key) {
+            return RSAPrivateKeyFromDer(base64_decode_url_safe(base64Key));
+        }
+
+        EVP_PKEY* RSAPrivateKeyFromHex(const std::string& hexKey) {
+            return RSAPrivateKeyFromDer(hex_decode(hexKey));
+        }
+
+
+        int maxRsaEncryptPlainTextSize(EVP_PKEY* pkey, const std::string& paddings) {
+            if (paddings == RSA_OAEPPadding) {
+                return (EVP_PKEY_bits(pkey) / 8) - 2*20 -2;
+            }
+            if (paddings == RSA_OAEPwithSHA_256andMGF1Padding) {
+                return (EVP_PKEY_bits(pkey) / 8) - 2*32 - 2;
+            }
+
+            if (paddings == RSA_OAEPwithSHA_384andMGF1Padding) {
+                return (EVP_PKEY_bits(pkey) / 8) - 2*48 - 2;
+            }
+
+            if (paddings == RSA_OAEPwithSHA_512andMGF1Padding) {
+                return (EVP_PKEY_bits(pkey) / 8) - 2*64 - 2;
+            }
+
+            return (EVP_PKEY_bits(pkey) / 8) - 11;//
+        }
+
+        int rsaEncryptBlockSize(EVP_PKEY* pkey, const std::string& paddings) {
+            return (EVP_PKEY_bits(pkey) / 8);
+        }
+
+        int rsaLength(EVP_PKEY* pkey) {
+            return (EVP_PKEY_bits(pkey) / 8);
+        }
+
+
+    }
+}
+
+
+
 namespace camel {
     namespace crypto {
 
@@ -203,95 +354,6 @@ namespace camel {
     }
 }
 
-
-namespace camel {
-    namespace crypto {
-        EVP_PKEY* RSAPublicKeyFromPem(const std::string& pemKey) {
-            EVP_PKEY* key = nullptr;
-            BIO* bio = BIO_new_mem_buf(pemKey.data(), static_cast<int>(pemKey.size()));
-            if (!bio) {
-                std::cerr << "RSAPublicKeyFromPem Failed to create memory BIO" << std::endl;
-                printOpenSSLError();
-                return key;
-            }
-
-            if (!PEM_read_bio_PUBKEY(bio, &key, nullptr, nullptr)) {
-                std::cerr << "RSAPublicKeyFromPem Failed to PEM_read_bio_PUBKEY " << std::endl;
-                printOpenSSLError();
-                BIO_free(bio);
-                return key;
-            }
-            BIO_free(bio);
-            return key;
-        }
-
-        EVP_PKEY* RSAPublicKeyFromBase64(const std::string& base64Key) {
-            return nullptr;
-        }
-
-        EVP_PKEY* RSAPublicKeyFromHex(const std::string& hexKey) {
-            return nullptr;
-        }
-
-        EVP_PKEY* RSAPublicKeyFromDer(const std::string& derKey) {
-            return nullptr;
-        }
-
-        EVP_PKEY* RSAPrivateKeyFromPem(const std::string& pemKey) {
-            EVP_PKEY* key = nullptr;
-            BIO* bio = BIO_new_mem_buf(pemKey.data(), static_cast<int>(pemKey.size()));
-            if (!bio) {
-                std::cerr << "RSAPrivateKeyFromPem Failed to create memory BIO" << std::endl;
-                printOpenSSLError();
-                return key;
-            }
-
-            if (!PEM_read_bio_PrivateKey(bio, &key, nullptr, nullptr)) {
-                std::cerr << "RSAPrivateKeyFromPem Failed to PEM_read_bio_PrivateKey " << std::endl;
-                printOpenSSLError();
-                BIO_free(bio);
-                return key;
-            }
-            BIO_free(bio);
-            return key;
-        }
-
-        EVP_PKEY* RSAPrivateKeyFromBase64(const std::string& base64Key) {
-            return nullptr;
-        }
-
-        EVP_PKEY* RSAPrivateKeyFromHex(const std::string& hexKey) {
-            return nullptr;
-        }
-
-        EVP_PKEY* RSAPrivateKeyFromDer(const std::string& derKey) {
-            return nullptr;
-        }
-
-        int maxRsaEncryptPlainTextSize(EVP_PKEY* pkey, const std::string& paddings) {
-            if (paddings == RSA_OAEPPadding) {
-                return (EVP_PKEY_bits(pkey) / 8) - 2*20 -2;
-            }
-            if (paddings == RSA_OAEPwithSHA_256andMGF1Padding) {
-                return (EVP_PKEY_bits(pkey) / 8) - 2*32 - 2;
-            }
-
-            if (paddings == RSA_OAEPwithSHA_384andMGF1Padding) {
-                return (EVP_PKEY_bits(pkey) / 8) - 2*48 - 2;
-            }
-
-            if (paddings == RSA_OAEPwithSHA_512andMGF1Padding) {
-                return (EVP_PKEY_bits(pkey) / 8) - 2*64 - 2;
-            }
-
-            return (EVP_PKEY_bits(pkey) / 8) - 11;//
-        }
-
-        int rsaEncryptBlockSize(EVP_PKEY* pkey, const std::string& paddings) {
-            return (EVP_PKEY_bits(pkey) / 8);
-        }
-    }
-}
 
 
 namespace camel {

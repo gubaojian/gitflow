@@ -14,11 +14,20 @@
 namespace camel {
     namespace crypto {
 
-        constexpr auto  RSA_PKCS1Padding = "PKCS1Padding";
-        constexpr auto  RSA_OAEPPadding = "OAEPPadding";
-        constexpr auto  RSA_OAEPwithSHA_256andMGF1Padding = "OAEPwithSHA-256andMGF1Padding";
-        constexpr auto  RSA_OAEPwithSHA_384andMGF1Padding = "OAEPwithSHA-384andMGF1Padding";
-        constexpr auto  RSA_OAEPwithSHA_512andMGF1Padding = "OAEPwithSHA-512andMGF1Padding";
+
+        EVP_PKEY* RSAPublicKeyFromPem(const std::string& pemKey);
+        EVP_PKEY* RSAPublicKeyFromBase64(const std::string& base64Key);
+        EVP_PKEY* RSAPublicKeyFromHex(const std::string& hexKey);
+        EVP_PKEY* RSAPublicKeyFromDer(const std::string& derKey);
+        EVP_PKEY* RSAPublicKeyFromDerByBio(const std::string& derKey);
+
+        EVP_PKEY* RSAPrivateKeyFromPem(const std::string& pemKey);
+        EVP_PKEY* RSAPrivateKeyFromBase64(const std::string& base64Key);
+        EVP_PKEY* RSAPrivateKeyFromHex(const std::string& hexKey);
+        EVP_PKEY* RSAPrivateKeyFromDer(const std::string& derKey);
+        EVP_PKEY* RSAPrivateKeyFromDerByBio(const std::string& derKey);
+
+
 
         class RSAKeyPairGenerator {
             public:
@@ -42,10 +51,11 @@ namespace camel {
             EVP_PKEY* pkey = nullptr;
         };
 
-        EVP_PKEY* RSAPublicKeyFromPem(const std::string& pemKey);
-        EVP_PKEY* RSAPublicKeyFromBase64(const std::string& base64Key);
-        EVP_PKEY* RSAPublicKeyFromHex(const std::string& hexKey);
-        EVP_PKEY* RSAPublicKeyFromDer(const std::string& derKey);
+        constexpr auto  RSA_PKCS1Padding = "PKCS1Padding";
+        constexpr auto  RSA_OAEPPadding = "OAEPPadding";
+        constexpr auto  RSA_OAEPwithSHA_256andMGF1Padding = "OAEPwithSHA-256andMGF1Padding";
+        constexpr auto  RSA_OAEPwithSHA_384andMGF1Padding = "OAEPwithSHA-384andMGF1Padding";
+        constexpr auto  RSA_OAEPwithSHA_512andMGF1Padding = "OAEPwithSHA-512andMGF1Padding";
 
         class RSAPublicKeyEncryptor {
            public:
