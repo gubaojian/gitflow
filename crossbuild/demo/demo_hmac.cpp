@@ -22,8 +22,8 @@ namespace camel {
             std::cout << fastSigner.signToBase64(data) << std::endl;
         }
 
-        void demoHmacPerf() {
-             HMACSha2_256Signer signer("hello world");
+        void demoHmacSignPerf() {
+ HMACSha2_256Signer signer("hello world");
             HMACSha2_256FastSigner fastSigner("hello world");
             std::string text_sign_data = "test signtest signtest signtest signtest signtest sign";
             int test_count = 10000*100;
@@ -111,6 +111,105 @@ namespace camel {
                  std::cout << "Hmac fast sign base64 used " <<  used.count() << std::endl;
                  std::cout << "Hmac fast sign base64 " << fastSigner.signToBase64(text_sign_data) << std::endl;
             }
+        }
+
+        void demoHmacCheckSignPerf() {
+            HMACSha2_256Signer signer("hello world");
+            HMACSha2_256FastSigner fastSigner("hello world");
+            std::string text_sign_data = "test signtest signtest signtest signtest signtest sign";
+            std::string sign =  signer.sign(text_sign_data);
+            std::string signHex =  signer.signToHex(text_sign_data);
+            std::string signBase64 =  signer.signToBase64(text_sign_data);
+            int test_count = 10000*100;
+            {
+                auto start = std::chrono::high_resolution_clock::now();
+                auto end = std::chrono::high_resolution_clock::now();
+                auto used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+                start = std::chrono::high_resolution_clock::now();
+                for(int i=0; i<test_count; i++) {
+                    signer.checkSign(text_sign_data, sign);
+                }
+                end = std::chrono::high_resolution_clock::now();
+                used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                std::cout << "Hmac normal check sign used " <<  used.count() << std::endl;
+            }
+
+            {
+                auto start = std::chrono::high_resolution_clock::now();
+                auto end = std::chrono::high_resolution_clock::now();
+                auto used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                start = std::chrono::high_resolution_clock::now();
+                for(int i=0; i<test_count; i++) {
+                    fastSigner.checkSign(text_sign_data, sign);
+                }
+                end = std::chrono::high_resolution_clock::now();
+                used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                std::cout << "Hmac fast check sign used " <<  used.count() << std::endl;
+            }
+
+            {
+                 auto start = std::chrono::high_resolution_clock::now();
+                 auto end = std::chrono::high_resolution_clock::now();
+                 auto used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+                 start = std::chrono::high_resolution_clock::now();
+                 for(int i=0; i<test_count; i++) {
+                     signer.checkHexSign(text_sign_data, signHex);
+                 }
+                 end = std::chrono::high_resolution_clock::now();
+                 used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                 std::cout << "Hmac normal check hex sign used " <<  used.count() << std::endl;
+                 std::cout << "Hmac normal check sign hex " << signer.signToHex(text_sign_data) << std::endl;
+            }
+
+            {
+                 auto start = std::chrono::high_resolution_clock::now();
+                 auto end = std::chrono::high_resolution_clock::now();
+                 auto used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                 start = std::chrono::high_resolution_clock::now();
+                 for(int i=0; i<test_count; i++) {
+                     fastSigner.checkHexSign(text_sign_data, signHex);
+                 }
+                 end = std::chrono::high_resolution_clock::now();
+                 used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                 std::cout << "Hmac fast sign check hex used " <<  used.count() << std::endl;
+                 std::cout << "Hmac fast sign check hex " << fastSigner.signToHex(text_sign_data) << std::endl;
+            }
+
+            {
+                 auto start = std::chrono::high_resolution_clock::now();
+                 auto end = std::chrono::high_resolution_clock::now();
+                 auto used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+                 start = std::chrono::high_resolution_clock::now();
+                 for(int i=0; i<test_count; i++) {
+                     signer.checkBase64Sign(text_sign_data, signBase64);
+                 }
+                 end = std::chrono::high_resolution_clock::now();
+                 used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                 std::cout << "Hmac normal check base64 sign used " <<  used.count() << std::endl;
+                 std::cout << "Hmac normal sign check base64 " << signer.signToBase64(text_sign_data) << std::endl;
+            }
+
+            {
+                 auto start = std::chrono::high_resolution_clock::now();
+                 auto end = std::chrono::high_resolution_clock::now();
+                 auto used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                 start = std::chrono::high_resolution_clock::now();
+                 for(int i=0; i<test_count; i++) {
+                     fastSigner.checkBase64Sign(text_sign_data, signBase64);
+                 }
+                 end = std::chrono::high_resolution_clock::now();
+                 used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                 std::cout << "Hmac fast sign check base64 used " <<  used.count() << std::endl;
+                 std::cout << "Hmac fast sign check base64 " << fastSigner.signToBase64(text_sign_data) << std::endl;
+            }
+        }
+
+        void demoHmacPerf() {
+            demoHmacSignPerf();
+            demoHmacCheckSignPerf();
         }
     }
 }

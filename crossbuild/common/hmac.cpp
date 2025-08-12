@@ -66,11 +66,11 @@ namespace camel {
         }
 
         bool HMACSha2_256Signer::checkHexSign(const std::string_view &data, const std::string_view &sign_data) {
-            return checkHexSign(data, hex_decode(sign_data));
+            return checkSign(data, hex_decode(sign_data));
         }
 
         bool HMACSha2_256Signer::checkBase64Sign(const std::string_view &data, const std::string_view &sign_data) {
-            return checkHexSign(data, base64_decode_url_safe(sign_data));
+            return checkSign(data, base64_decode_url_safe(sign_data));
         }
 
         HMACSha2_256FastSigner::HMACSha2_256FastSigner(const std::string &secret) {
@@ -177,11 +177,11 @@ namespace camel {
         }
 
         bool HMACSha2_256FastSigner::checkHexSign(const std::string_view &data, const std::string_view &sign_data) {
-            return checkHexSign(data, hex_decode(sign_data));
+            return checkSign(data, hex_decode(sign_data));
         }
 
         bool HMACSha2_256FastSigner::checkBase64Sign(const std::string_view &data, const std::string_view &sign_data) {
-            return checkHexSign(data, base64_decode(sign_data));
+            return checkSign(data, base64_decode(sign_data));
         }
     }
 }
