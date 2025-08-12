@@ -12,7 +12,7 @@
 
 namespace camel {
     namespace crypto {
-        std::string base64_encode(const std::string &input) {
+        inline std::string base64_encode_by_bio(const std::string &input) {
             if (input.empty()) {
                 return "";
             }
@@ -33,6 +33,32 @@ namespace camel {
             // Free all BIOs in the chain
             BIO_free_all(b64);
             return result;
+        }
+
+        /**
+         * 无换行，速度比base64_encode_by_bio快3-4倍
+         * @param input
+         * @return
+         */
+        inline std::string base64_encode_by_block(const std::string &input) {
+            if (input.empty()) {
+                return "";
+            }
+
+            std::string result;
+            result.resize(input.length()*2);
+            unsigned char *out = (unsigned char*)result.data();;
+            unsigned char *in = (unsigned char*)input.data();
+            int encoded_len = EVP_EncodeBlock(out, in, input.size());
+            if (encoded_len <= 0) {
+                return "";
+            }
+            result.resize(encoded_len);
+            return result;
+        }
+
+        std::string base64_encode(const std::string &input) {
+            return base64_encode_by_block(input);
         }
 
         std::string base64_encode_url_safe(const std::string &input) {
@@ -118,7 +144,7 @@ namespace camel {
             return base64_decode_std(std::string_view(input));
         }
 
-        std::string base64_decode(const std::string &input) {
+        std::string base64_decode(const std::string_view &input) {
             return base64_decode_std(input);
         }
         std::string base64_decode_url_safe(const std::string &input) {

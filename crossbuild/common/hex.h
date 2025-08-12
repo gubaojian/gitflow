@@ -11,6 +11,7 @@
 namespace camel {
     namespace crypto {
         std::string hex_encode(const std::string &input);
+        std::string hex_encode(const std::string_view &input);
         std::string hex_decode(const std::string &input);
         std::string hex_decode(const std::string_view &input);
     }

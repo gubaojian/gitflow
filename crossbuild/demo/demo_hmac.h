@@ -9,6 +9,7 @@
 namespace camel {
     namespace crypto {
         void demoHmac();
+        void demoHmacPerf();
     }
 }
 

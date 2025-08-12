@@ -33,8 +33,10 @@ namespace camel {
             RSAPrivateKeyDecryptor decryptorPem(rsa.getPemPrivateKey());
             RSAPublicKeyEncryptor encryptorDer(rsa.getPublicKey(), "der");
             RSAPrivateKeyDecryptor decryptorDer(rsa.getPrivateKey(), "der");
+            std::cout <<"hex format " << std::endl;
             RSAPublicKeyEncryptor encryptorHex(rsa.getHexPublicKey(), "hex");
             RSAPrivateKeyDecryptor decryptorHex(rsa.getHexPrivateKey(), "hex");
+            std::cout <<"base64 format " << std::endl;
             RSAPublicKeyEncryptor encryptorBase64(rsa.getBase64NewLinePublicKey(), "base64");
             RSAPrivateKeyDecryptor decryptorBase64(rsa.getBase64NewLinePrivateKey(), "base64");
             {

@@ -35,7 +35,7 @@ namespace camel {
          * @param input 待解码的 Base64 字符串（支持标准格式的 +、/、=，及 URL 安全的 -、_）
          * @return 解码后的原始二进制数据；解码失败返回空字符串
          */
-        std::string base64_decode(const std::string &input);
+        std::string base64_decode(const std::string_view &input);
         std::string base64_decode_url_safe(const std::string &input);
         std::string base64_decode_url_safe(const std::string_view &input);
 

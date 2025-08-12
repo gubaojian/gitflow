@@ -37,6 +37,8 @@ add_executable(crossbuild main.cpp
         common/Encrypt.h
         common/config.h
         common/config.cpp
+        common/fast_hex.cpp
+        common/fast_hex.h
         common/hex.cpp
         common/hex.h
         common/base64.cpp
@@ -88,6 +90,8 @@ set(JNI_SOURCE
     common/file_utils.h
     common/hmac.cpp
     common/hmac.h
+        common/fast_hex.cpp
+        common/fast_hex.h
 )
 
 add_library(encrypt SHARED

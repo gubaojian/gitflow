@@ -35,6 +35,7 @@ void runAllDemos() {
    //demoRsaCryptPerf();
    //demoRsaDecryptPerf();
    demoHmac();
+   demoHmacPerf();
 }
 
 int main() {
