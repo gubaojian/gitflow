@@ -35,25 +35,31 @@ endif()
 add_executable(crossbuild main.cpp
         common/Encrypt.cpp
         common/Encrypt.h
-        common/rsa.cpp
-        common/rsa.h
         common/config.h
         common/config.cpp
         common/hex.cpp
         common/hex.h
         common/base64.cpp
         common/base64.h
-        test/test_rsa.cpp
-        test/test_rsa.h
+        common/rsa.cpp
+        common/rsa.h
+        common/hmac.cpp
+        common/hmac.h
         common/file_utils.h
         test/test_base64.cpp
         test/test_base64.h
         test/test_hex.cpp
         test/test_hex.h
         test/test.h
+        test/test_rsa.cpp
+        test/test_rsa.h
+        test/test_hmac.cpp
+        test/test_hmac.h
         demo/demo_rsa.cpp
         demo/demo_rsa.h
         demo/demo.h
+        demo/demo_hmac.cpp
+        demo/demo_hmac.h
 )
 
 target_link_libraries(crossbuild
@@ -80,6 +86,8 @@ set(JNI_SOURCE
     common/base64.cpp
     common/base64.h
     common/file_utils.h
+    common/hmac.cpp
+    common/hmac.h
 )
 
 add_library(encrypt SHARED

@@ -15,7 +15,9 @@
 #include <string>
 #include <fstream>
 #include <stdexcept>
-
+#include "demo/demo_hmac.h"
+#include "test/test_hmac.h"
+#include "test/test_rsa.h"
 
 
 using namespace camel::crypto;
@@ -24,13 +26,15 @@ void runAllTests() {
     testRsaGenerateKey();
     testHex();
     testBase64();
+    testHmac();
 }
 
 void runAllDemos() {
    demoRsaGenerateKey();
    demoRsaEncrypt();
-   demoRsaCryptPerf();
-   demoRsaDecryptPerf();
+   //demoRsaCryptPerf();
+   //demoRsaDecryptPerf();
+   demoHmac();
 }
 
 int main() {
