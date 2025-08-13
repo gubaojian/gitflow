@@ -105,7 +105,7 @@ namespace camel {
               * OAEPwithSHA-384andMGF1Padding
               * OAEPwithSHA-512andMGF1Padding
                */
-            explicit RSAPrivateKeyDecryptor(const std::string& publicKey,
+            explicit RSAPrivateKeyDecryptor(const std::string& privateKey,
                   const std::string& format = "pem",
                   const std::string& paddings = RSA_PKCS1Padding);
             ~RSAPrivateKeyDecryptor() {
@@ -124,6 +124,37 @@ namespace camel {
             std::string format;
             std::string paddings;
         };
+
+
+        class RSAPrivateKeySigner {
+        public:
+            /**
+              * format = "pem", "hex", "base64", "der"
+              * OAEPPadding PKCS1Padding default
+              * OAEPwithSHA-256andMGF1Padding
+              * OAEPwithSHA-384andMGF1Padding
+              * OAEPwithSHA-512andMGF1Padding
+               */
+            explicit RSAPrivateKeySigner(const std::string& publicKey,
+                  const std::string& format = "pem",
+                  const std::string& paddings = RSA_PKCS1Padding);
+            ~RSAPrivateKeySigner() {
+                if (pKey != nullptr) {
+                    EVP_PKEY_free(pKey);
+                    pKey = nullptr;
+                }
+            }
+        public:
+            std::string sign(const std::string_view& plainText) const;
+            std::string signToBase64(const std::string_view& plainText) const;
+            std::string signToHex(const std::string_view& plainText) const;
+        private:
+            EVP_PKEY* pKey = nullptr;
+            std::string privateKey;
+            std::string format;
+            std::string paddings;
+        };
+
 
 
 
