@@ -53,9 +53,14 @@ namespace camel {
 
         constexpr auto  RSA_PKCS1Padding = "PKCS1Padding";
         constexpr auto  RSA_OAEPPadding = "OAEPPadding";
+        constexpr auto  RSA_OAEPWithSHA_1AndMGF1Padding = " OAEPWithSHA-1AndMGF1Padding";
         constexpr auto  RSA_OAEPwithSHA_256andMGF1Padding = "OAEPwithSHA-256andMGF1Padding";
         constexpr auto  RSA_OAEPwithSHA_384andMGF1Padding = "OAEPwithSHA-384andMGF1Padding";
         constexpr auto  RSA_OAEPwithSHA_512andMGF1Padding = "OAEPwithSHA-512andMGF1Padding";
+        constexpr auto  RSA_OAEP_SHA256_MGF1_SHA256 = "RSA_OAEP_SHA256_MGF1_SHA256";
+        constexpr auto  RSA_OAEP_SHA512_MGF1_SHA512 = "RSA_OAEP_SHA512_MGF1_SHA512";
+        constexpr auto  RSA_OAEP_SHA3_256_MGF1_SHA3_256 = "RSA_OAEP_SHA3_256_MGF1_SHA3_256";
+        constexpr auto  RSA_OAEP_SHA3_512_MGF1_SHA3_512 = "RSA_OAEP_SHA3_512_MGF1_SHA3_512";
 
         class RSAPublicKeyEncryptor {
            public:

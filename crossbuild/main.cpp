@@ -24,6 +24,7 @@ using namespace camel::crypto;
 
 void runAllTests() {
     testRsaGenerateKey();
+    testRsaWithJava();
     testHex();
     testBase64();
     testHmac();
@@ -32,10 +33,11 @@ void runAllTests() {
 void runAllDemos() {
    demoRsaGenerateKey();
    demoRsaEncrypt();
+    demoWithJava();
    //demoRsaCryptPerf();
    //demoRsaDecryptPerf();
-   demoHmac();
-   demoHmacPerf();
+   //demoHmac();
+   //demoHmacPerf();
 }
 
 int main() {

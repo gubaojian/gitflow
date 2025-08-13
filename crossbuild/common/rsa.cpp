@@ -8,6 +8,7 @@
 
 #include "base64.h"
 #include "hex.h"
+#include "openssl/core_names.h"
 
 
 namespace camel {
@@ -152,6 +153,352 @@ namespace camel {
 
         int rsaLength(EVP_PKEY* pkey) {
             return (EVP_PKEY_bits(pkey) / 8);
+        }
+
+        bool configEncryptParams(EVP_PKEY_CTX *ctx, const std::string& paddings) {
+          if (paddings == RSA_OAEPPadding) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA1;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
+                OSSL_PARAM params[] = {
+                  OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                               paddingMode.data(), paddingMode.size()),
+                  OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                  OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                  OSSL_PARAM_END
+                 };
+                if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            } else if (paddings == RSA_OAEPWithSHA_1AndMGF1Padding) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA1;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            } else if (paddings == RSA_OAEPwithSHA_256andMGF1Padding) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA2_256;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            } else if (paddings == RSA_OAEPwithSHA_384andMGF1Padding) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA2_384;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            } else if (paddings == RSA_OAEPwithSHA_512andMGF1Padding) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA2_512;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            } else if (paddings == RSA_PKCS1Padding) {
+                // RSA_PKCS1_PADDING
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_PKCSV15;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                     OSSL_PARAM_END
+                };
+                if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            }else if (paddings ==  RSA_OAEP_SHA256_MGF1_SHA256) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA2_256;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA2_256;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            }else if (paddings ==  RSA_OAEP_SHA512_MGF1_SHA512) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA2_512;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA2_512;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            }else if (paddings ==  RSA_OAEP_SHA3_256_MGF1_SHA3_256) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA3_256;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA3_256;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            }else if (paddings ==  RSA_OAEP_SHA3_512_MGF1_SHA3_512) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA3_512;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA3_512;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            }
+            std::cerr << "configEncryptParams unsupported mode " << paddings << std::endl;
+            return false;
+        }
+
+        bool configDecryptParams(EVP_PKEY_CTX *ctx, const std::string& paddings) {
+            if (paddings == RSA_OAEPPadding) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA1;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_decrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configDecryptParams Failed to EVP_PKEY_decrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            } else if (paddings == RSA_OAEPWithSHA_1AndMGF1Padding) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA1;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_decrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configDecryptParams Failed to EVP_PKEY_decrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            } else if (paddings == RSA_OAEPwithSHA_256andMGF1Padding) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA2_256;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_decrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configDecryptParams Failed to EVP_PKEY_decrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            } else if (paddings == RSA_OAEPwithSHA_384andMGF1Padding) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA2_384;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_decrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configDecryptParams Failed to EVP_PKEY_decrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            } else if (paddings == RSA_OAEPwithSHA_512andMGF1Padding) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA2_512;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_decrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configDecryptParams Failed to EVP_PKEY_decrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            } else if (paddings == RSA_PKCS1Padding) {
+                // RSA_PKCS1_PADDING
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_PKCSV15;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                     OSSL_PARAM_END
+                };
+                if (EVP_PKEY_decrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configDecryptParams Failed to EVP_PKEY_decrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            }else if (paddings ==  RSA_OAEP_SHA256_MGF1_SHA256) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA2_256;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA2_256;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_decrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configDecryptParams Failed to EVP_PKEY_decrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            }else if (paddings ==  RSA_OAEP_SHA512_MGF1_SHA512) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA2_512;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA2_512;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_decrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configDecryptParams Failed to EVP_PKEY_decrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            }else if (paddings ==  RSA_OAEP_SHA3_256_MGF1_SHA3_256) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA3_256;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA3_256;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_decrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configDecryptParams Failed to EVP_PKEY_decrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            }else if (paddings ==  RSA_OAEP_SHA3_512_MGF1_SHA3_512) {
+                std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
+                std::string mainHash = OSSL_DIGEST_NAME_SHA3_512;
+                std::string mgf1Hash = OSSL_DIGEST_NAME_SHA3_512;
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_PAD_MODE,
+                                                 paddingMode.data(), paddingMode.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
+                    OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                    OSSL_PARAM_END
+                };
+                if (EVP_PKEY_decrypt_init_ex(ctx, params) <= 0) {
+                    std::cerr << "configDecryptParams Failed to EVP_PKEY_decrypt_init_ex " << paddings << std::endl;
+                    printOpenSSLError();
+                    return false;
+                }
+                return true;
+            }
+            std::cerr << "configDecryptParams unsupported mode " << paddings << std::endl;
+            return false;
         }
 
 
@@ -388,47 +735,11 @@ namespace camel {
                 return "";
             }
 
-            OSSL_PARAM params[5];
-            if (paddings == RSA_OAEPPadding) {
-                int rsa_pad = RSA_PKCS1_OAEP_PADDING;
-                std::string shaName = "SHA-1";
-                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
-                params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
-                params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
-                params[3] = OSSL_PARAM_END;
-            } else if (paddings == RSA_OAEPwithSHA_256andMGF1Padding) {
-                int rsa_pad = RSA_PKCS1_OAEP_PADDING;
-                std::string shaName = "SHA-256";
-                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
-                params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
-                params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
-                params[3] = OSSL_PARAM_END;
-            } else if (paddings == RSA_OAEPwithSHA_384andMGF1Padding) {
-                int rsa_pad = RSA_PKCS1_OAEP_PADDING;
-                std::string shaName = "SHA-384";
-                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
-                params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
-                params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
-                params[3] = OSSL_PARAM_END;
-            } else if (paddings == RSA_OAEPwithSHA_512andMGF1Padding) {
-                int rsa_pad = RSA_PKCS1_OAEP_PADDING;
-                std::string shaName = "SHA-512";
-                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
-                params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
-                params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
-                params[3] = OSSL_PARAM_END;
-            } else {
-                int rsa_pad = RSA_PKCS1_PADDING;
-                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
-                params[1] = OSSL_PARAM_END;
-            }
-
-            if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
-                std::cerr << "RSAPublicKeyEncryptor::encrypt() Failed to EVP_PKEY_encrypt_init_ex " << std::endl;
-                printOpenSSLError();
+            if (!configEncryptParams(ctx, paddings)) {
                 EVP_PKEY_CTX_free(ctx);
                 return "";
             }
+
             std::string buffer;
             int bigBufferSize = plainText.size()*2;
             buffer.resize(std::max(bigBufferSize, 2048));
@@ -503,47 +814,11 @@ namespace camel {
                 return "";
             }
 
-            OSSL_PARAM params[5];
-            if (paddings == RSA_OAEPPadding) {
-                int rsa_pad = RSA_PKCS1_OAEP_PADDING;
-                std::string shaName = "SHA-1";
-                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
-                params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
-                params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
-                params[3] = OSSL_PARAM_END;
-            } else if (paddings == RSA_OAEPwithSHA_256andMGF1Padding) {
-                int rsa_pad = RSA_PKCS1_OAEP_PADDING;
-                std::string shaName = "SHA-256";
-                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
-                params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
-                params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
-                params[3] = OSSL_PARAM_END;
-            }else if (paddings == RSA_OAEPwithSHA_384andMGF1Padding) {
-                int rsa_pad = RSA_PKCS1_OAEP_PADDING;
-                std::string shaName = "SHA-384";
-                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
-                params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
-                params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
-                params[3] = OSSL_PARAM_END;
-            }else if (paddings == RSA_OAEPwithSHA_512andMGF1Padding) {
-                int rsa_pad = RSA_PKCS1_OAEP_PADDING;
-                std::string shaName = "SHA-512";
-                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
-                params[1] = OSSL_PARAM_construct_utf8_string("rsa-oaep-md", shaName.data(), shaName.size());
-                params[2] = OSSL_PARAM_construct_utf8_string("rsa-mgf1-md", shaName.data(), shaName.size());
-                params[3] = OSSL_PARAM_END;
-            }else {
-                int rsa_pad = RSA_PKCS1_PADDING;
-                params[0] = OSSL_PARAM_construct_int("rsa-pad", &rsa_pad);
-                params[1] = OSSL_PARAM_END;
-            }
-
-            if (EVP_PKEY_decrypt_init_ex(ctx, params) <= 0) {
-                std::cerr << "RSAPrivateKeyDecryptor::decrypt() Failed to EVP_PKEY_encrypt_init_ex " << std::endl;
-                printOpenSSLError();
+            if (!configDecryptParams(ctx, paddings)) {
                 EVP_PKEY_CTX_free(ctx);
                 return "";
             }
+
             std::string buffer;
             int bigBufferSize = encryptedData.size();
             buffer.resize(std::max(bigBufferSize, 1024));
