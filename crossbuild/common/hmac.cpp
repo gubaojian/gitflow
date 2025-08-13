@@ -166,22 +166,24 @@ namespace camel {
         }
 
         bool HMACSha2_256FastSigner::checkSign(const std::string_view &data, const std::string_view &sign_data) {
-            std::string check_sign = sign(data);
-            if (check_sign.empty()) {
+            std::string expect_sign = sign(data);
+            if (expect_sign.empty()) {
                 return false;
             }
-            if (check_sign.length() != sign_data.size()) {
+            if (expect_sign.length() != sign_data.size()) {
                 return false;
             }
-            return check_sign == sign_data;
+            return expect_sign == sign_data;
         }
 
         bool HMACSha2_256FastSigner::checkHexSign(const std::string_view &data, const std::string_view &sign_data) {
-            return checkSign(data, hex_decode(sign_data));
+            std::string sign = hex_decode(sign_data);
+            return checkSign(data, sign);
         }
 
         bool HMACSha2_256FastSigner::checkBase64Sign(const std::string_view &data, const std::string_view &sign_data) {
-            return checkSign(data, base64_decode(sign_data));
+            std::string sign = base64_decode(sign_data);
+            return checkSign(data, sign);
         }
     }
 }

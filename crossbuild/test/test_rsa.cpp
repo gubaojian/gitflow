@@ -96,6 +96,43 @@ namespace camel {
             }
         }
 
+        void testRsaSign() {
+            bool passed = true;
+            {
+                 std::string  plainText = "hello world rsa";
+                 std::string  privateKey = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC3LsCB4ElKKMhbxlSO06ohn3wk7QblfdevC9Jlqw7qL5s4wk7s3VvNyyKLgtMqwchq4EtC9gL+vEzMivVyOgfS8IT5so3ZwJkjcMrvy6822+Qk44hBNKr6fYVugXhoExtjXKAN2xFWM4M7qMbGRvzDcAFi2eWde4pVY9KaPYi33KEkM41umLsWXv8zp60FKrleXTlhx6gV8wu4bLGbTCOjIjRPQM7Sel9zsW6tY/7tLrms0pRVG9esNp+/Hb77dcjI22PlaH3luNS5jiy5nGznmdo1+HseFVQ8RK9CnpsdTot5ajctE/ND52i/UpJ4MkpcYFd0B+9tsVLdcPE1cttHAgMBAAECggEABi7JyJhtYNdni9Fx4TA7uc7MPeLSLMTGlt3rSAsyAa2Bq7TDPTNredK1Y8gSoIrR3OmdILF1AGwSm4TFLAnRYclEc7kXGJZrlMqlztotG8joNmaHnsvMSZAbBNPR4JFkh0IFFPKj7yjl8QmNS/vxZBdPtKpuGZal4KPx48rX5ny5MBxjtaFW+eBK9Dla+1EqiuFHOU1uIibbNHDouS8g5wDFmRwFL+nrWgv9xSGj7BPfkFi0mpfGN6rTZeJQBlgzLCx4BRxcD8P62hOW0/sMiKORnSvDtWu9e6lA9qAidmzG8QyHkwz/u+BFFdbPB/PQUVw8uzVTJzvcwASumCRxYQKBgQDCrS1oPsazdixBedrADHbNP4njxrCCLZ9jJ5jazepgVCYSNGcM0YjHr6PfCAseEKT8BXpFDVVy5UR3jhZS+XasTVQl34cXUgZjIkFqSgLHPkeyo1p/QXi4HQNjBpQfpjrq5TpDyBLbfZ6Z8NLlXCtIcrVpdDrWP3jvj3MtFhEHjQKBgQDw4rQ6P3BIEE/PQd2u3HJvH8WqfHYdKQW6s4i1sSkLR2Je/my0H5m4o0LRtwG5xs3VPNcK2RdQAosIKtAcxVOm2u7qg0pZmbXYH5TfL/YsaPY72yM0qjda6xcZU4X1Yd6x9Xa08pgmBisRr/Uo2uNUpCn+RBOnPDjaSpXEfXffIwKBgHnXGxkoWQIOzun30uHpqx0QTEPDocsHtL7BFJi00aCSafVw2KIcLggUNHKtPRAHCMs2vmyjSLyNI0nUIsKxoQV7rFO7z3fX/WlkEh7szUpX/1WdiVEl7+EDP5BlmKUqS6uh5dJwUOUQfQgJwmSMSAaizEmA1iYrOYxtcn9gVS4tAoGBAMNXdMQPkeQ+phny1ezphDstTsR0bewzyhufX+vHoPsuhk12kXx4a9ZZPuSGPfYDjAOydMitR8Rwa4LSBTZvpuiWfkza7z498kMzSSy83ishax0bFi+tIXqvTmoRW36kQU2bOwp9+HhNZDvRr0PUTanj/tHdLvrdUVVkSpOvE7h1AoGAY6TqZi6YbNJ9sldm/VW+4icJ3J4i3SnWhTzX4f0wJ0yh7BrRNZ/00mYYG+VY1zfe/4p5kpbD5Qee7CrYsYu41/VX4z3qOlMXz8ht4E5zisqs+Z12LyCRe1te6hwiGGyx66Wg1ihM4Pntx3eGptcdWXVjde/dQNJCv4+F8TrCqLc=";
+                 std::string  publicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAty7AgeBJSijIW8ZUjtOqIZ98JO0G5X3XrwvSZasO6i+bOMJO7N1bzcsii4LTKsHIauBLQvYC/rxMzIr1cjoH0vCE+bKN2cCZI3DK78uvNtvkJOOIQTSq+n2FboF4aBMbY1ygDdsRVjODO6jGxkb8w3ABYtnlnXuKVWPSmj2It9yhJDONbpi7Fl7/M6etBSq5Xl05YceoFfMLuGyxm0wjoyI0T0DO0npfc7FurWP+7S65rNKUVRvXrDafvx2++3XIyNtj5Wh95bjUuY4suZxs55naNfh7HhVUPESvQp6bHU6LeWo3LRPzQ+dov1KSeDJKXGBXdAfvbbFS3XDxNXLbRwIDAQAB";
+
+                {
+                     std::string sign = "jg5r5z1SHWhfbzCa0TT8xblGCgP/HWMHs65UmsMw4Teqb6wwpfMdCaSUN2GhFRlKvssLg4kWM/+4uyCf7UhWsb1n++RDCdlyNu0dK3AXgD/kIrrkEkxx6FX7EK9Tf4C93232dERoGmPVySO7M6FNw3hCnkTTMya1/98Zzf4dxd/C5hCgiDI9yQUrMIpFCj0bKBFMRYcVavARPDe+o7B+X8e1lWqBECLHYdfBJpHW5VA+NGNlDYjFTX24hX8yP9EUUKyyzVRrMh+CttAtKR/p4LI3e2xCYYQqAdIW5b032E23l0N2F2obZcgI3y5wqveL5WKr5S+VSgS3WAvIHsqe9w==";
+                     RSAPrivateKeySigner signer(privateKey, "base64");
+                     RSAPublicKeyVerifier verifier(publicKey, "base64");
+
+                     passed = passed && sign == signer.signToBase64(plainText);
+
+                     passed = passed && verifier.verifyBase64Sign(sign, plainText);
+                 }
+
+                {
+                     std::string sign = "M2u6EUrid/MUlAEa48PtvqPAml/PNJKGwVjXW4jVvr4PRP8uZoylM8mKiYjG1bc4b9T8Xe3n8Zpgd1pjuJrs2auNMtN3fPN8VD2yZG1L32KAj4RECgIaXXnGDvWMESrhTsbBc3LpWGihp0tTyqrnwk8TrdlByBFMSMp9KQxWMT+BzPwpc/G431w4g9iQa8qVrnX5HV4MuRMdJHadh1fKijs+0G7H0pmXFP/vQlwHtTJZ85QMN0IAs/OM/0QKLoOFHgfNt7mzdzutdQYfh+ixL+j8uj9JpuN7wr2pfnDOLklG9xiD+AP3RyR9yr/c/vjyLioJwJ1hjUNv+0CC3D70hg==";
+
+                     RSAPrivateKeySigner signer(privateKey, "base64", "SHA1withRSA");
+                     RSAPublicKeyVerifier verifier(publicKey, "base64", "SHA1withRSA");
+
+                     passed = passed && sign == signer.signToBase64(plainText);
+
+                     passed = passed && verifier.verifyBase64Sign(sign, plainText);
+                }
+
+
+            }
+            if (passed) {
+                std::cout << "testRsaSign() passed " << std::endl;
+            } else {
+                std::cout << "testRsaSign() failed " << std::endl;
+            }
+        }
+
 
 
 

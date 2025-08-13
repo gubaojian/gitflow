@@ -10,6 +10,7 @@ namespace camel {
     namespace crypto {
         void testRsaGenerateKey();
         void testRsaWithJava();
+        void testRsaSign();
     }
 }
 

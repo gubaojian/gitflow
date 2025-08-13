@@ -11,6 +11,10 @@
 #include "openssl/core_names.h"
 
 
+#ifndef OSSL_PKEY_RSA_PAD_MODE_PKCS1
+  #define OSSL_PKEY_RSA_PAD_MODE_PKCS1 "pkcs1"
+#endif
+
 namespace camel {
     namespace crypto {
         EVP_PKEY* RSAPublicKeyFromPem(const std::string& pemKey) {
@@ -525,24 +529,90 @@ namespace camel {
             return false;
         }
 
-        bool configSignParams(EVP_PKEY_CTX *ctx, const std::string& paddings) {
-            std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_PKCSV15;
+        inline bool algorithmHas(const std::string& algorithm, std::string_view target) {
+            return algorithm.find(target) != std::string::npos;
+        }
+
+        bool configSignParams(EVP_MD_CTX* ctx,  EVP_PKEY* key, const std::string& algorithm) {
+            std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_PKCS1;
             std::string signHash = OSSL_DIGEST_NAME_SHA2_256;
+
+            if (algorithmHas(algorithm,"PSS")) {
+                paddingMode = OSSL_PKEY_RSA_PAD_MODE_PSS;
+            }
+            if (algorithmHas(algorithm,"MD5withRSA")) {
+                signHash = OSSL_DIGEST_NAME_MD5;
+            } else if (algorithmHas(algorithm,"SHA1withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA1;
+            } else if (algorithmHas(algorithm,"SHA256withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_256;
+            } else if (algorithmHas(algorithm,"SHA384withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_384;
+            } else if (algorithmHas(algorithm,"SHA512withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_256;
+            } else if (algorithmHas(algorithm,"SHA512/224withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_512_224;
+            } else if (algorithmHas(algorithm,"SHA512/256withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_512_256;
+            } else if (algorithmHas(algorithm,"SHA3_256withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA3_256;
+            } else if (algorithmHas(algorithm,"SHA3_384withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA3_384;
+            } else if (algorithmHas(algorithm,"SHA3_512withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA3_512;
+            }
             OSSL_PARAM params[] = {
                 OSSL_PARAM_construct_utf8_string(OSSL_SIGNATURE_PARAM_PAD_MODE,
                                              paddingMode.data(), paddingMode.size()),
-                OSSL_PARAM_construct_utf8_string(OSSL_SIGNATURE_PARAM_DIGEST, signHash.data(), signHash.size()),
                 OSSL_PARAM_END
             };
-            if (EVP_PKEY_sign_init_ex(ctx, params) <= 0) {
-                std::cerr << "configSignParams Failed to EVP_PKEY_sign_init_ex " << paddings << std::endl;
+            if (EVP_DigestSignInit_ex(ctx, NULL, signHash.data(), nullptr, nullptr,
+                            key, params) == 0) {
                 printOpenSSLError();
                 return false;
             }
             return true;
+        }
 
-            std::cerr << "configSignParams unsupported mode " << paddings << std::endl;
-            return false;
+         bool configVerifyParams(EVP_MD_CTX* ctx,  EVP_PKEY* key, const std::string& algorithm) {
+            std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_PKCS1;
+            std::string signHash = OSSL_DIGEST_NAME_SHA2_256;
+
+            if (algorithmHas(algorithm,"PSS")) {
+                paddingMode = OSSL_PKEY_RSA_PAD_MODE_PSS;
+            }
+            if (algorithmHas(algorithm,"MD5withRSA")) {
+                signHash = OSSL_DIGEST_NAME_MD5;
+            } else if (algorithmHas(algorithm,"SHA1withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA1;
+            } else if (algorithmHas(algorithm,"SHA256withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_256;
+            } else if (algorithmHas(algorithm,"SHA384withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_384;
+            } else if (algorithmHas(algorithm,"SHA512withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_256;
+            } else if (algorithmHas(algorithm,"SHA512/224withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_512_224;
+            } else if (algorithmHas(algorithm,"SHA512/256withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_512_256;
+            } else if (algorithmHas(algorithm,"SHA3_256withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA3_256;
+            } else if (algorithmHas(algorithm,"SHA3_384withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA3_384;
+            } else if (algorithmHas(algorithm,"SHA3_512withRSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA3_512;
+            }
+            OSSL_PARAM params[] = {
+                OSSL_PARAM_construct_utf8_string(OSSL_SIGNATURE_PARAM_PAD_MODE,
+                                             paddingMode.data(), paddingMode.size()),
+                OSSL_PARAM_END
+            };
+            if (EVP_DigestVerifyInit_ex(ctx, NULL, signHash.data(), nullptr, nullptr,
+                            key, params) == 0) {
+                printOpenSSLError();
+                return false;
+            }
+            return true;
         }
 
 
@@ -896,11 +966,13 @@ namespace camel {
         }
 
         std::string RSAPrivateKeyDecryptor::decryptFromHex(const std::string_view &encryptedText) const {
-            return decrypt(hex_decode(encryptedText));
+            std::string data = hex_decode(encryptedText);
+            return decrypt(data);
         }
 
         std::string RSAPrivateKeyDecryptor::decryptFromBase64(const std::string_view &encryptedText) const {
-            return decrypt(base64_decode_url_safe(encryptedText));
+            std::string data = base64_decode_url_safe(encryptedText);
+            return decrypt(data);
         }
 
     }
@@ -912,8 +984,8 @@ namespace camel {
     namespace crypto {
         RSAPrivateKeySigner::RSAPrivateKeySigner(const std::string& privateKey,
                   const std::string& format,
-                  const std::string& paddings) {
-            this->paddings = paddings;
+                  const std::string& algorithm) {
+            this->algorithm = algorithm;
             this->format = format;
             this->privateKey =privateKey;
             if ("hex" == format) {
@@ -929,39 +1001,41 @@ namespace camel {
             }
         }
 
+
         std::string RSAPrivateKeySigner::sign(const std::string_view &plainText) const {
             if (pKey == nullptr || plainText.empty()) {
                 return "";
             }
-            EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(pKey, nullptr);
+
+            EVP_MD_CTX* ctx = EVP_MD_CTX_new();
             if (ctx == nullptr) {
-                std::cerr << "RSAPrivateKeySigner::sign() Failed to create EVP_PKEY_CTX_new " << std::endl;
+                std::cerr << "RSAPrivateKeySigner::sign() Failed to create EVP_MD_CTX_new() " << std::endl;
                 printOpenSSLError();
                 return "";
             }
-
-            if (!configSignParams(ctx, paddings)) {
-                EVP_PKEY_CTX_free(ctx);
+            if (!configSignParams(ctx, pKey, algorithm)) {
+                EVP_MD_CTX_free(ctx);
                 return "";
             }
-
-
+            if (EVP_DigestSignUpdate(ctx, plainText.data(), plainText.size()) == 0) {
+                std::cerr << "RSAPrivateKeySigner::sign() Failed to EVP_DigestSignUpdate " << std::endl;
+                printOpenSSLError();
+                EVP_MD_CTX_free(ctx);
+                return "";
+            }
 
             std::string buffer;
             buffer.resize(rsaMaxSignSize(pKey));
-            unsigned char *in = (unsigned char *)plainText.data();
             unsigned char *out = (unsigned char*) buffer.data();
-            size_t outlen =  32;
-            size_t inlen = plainText.size();
-            if (EVP_PKEY_sign(ctx, out, &outlen, in, inlen) <= 0) {
-                std::cerr << "RSAPrivateKeySigner::sign() Failed to EVP_PKEY_sign " << std::endl;
+            size_t outlen =  buffer.size();
+            if (EVP_DigestSignFinal(ctx, out, &outlen) == 0) {
+                std::cerr << "RSAPrivateKeySigner::sign() Failed to EVP_DigestSignFinal " << std::endl;
                 printOpenSSLError();
-                EVP_PKEY_CTX_free(ctx);
+                EVP_MD_CTX_free(ctx);
                 return "";
             }
+            EVP_MD_CTX_free(ctx);
             buffer.resize(outlen);
-
-            EVP_PKEY_CTX_free(ctx);
 
             return buffer;
         }
@@ -973,6 +1047,80 @@ namespace camel {
         std::string RSAPrivateKeySigner::signToBase64(const std::string_view &plainText) const {
             return base64_encode(sign(plainText));
         }
+
+    }
+}
+
+
+namespace camel {
+    namespace crypto {
+        RSAPublicKeyVerifier::RSAPublicKeyVerifier(const std::string& publicKey,
+                  const std::string& format,
+                  const std::string& algorithm) {
+            this->algorithm = algorithm;
+            this->format = format;
+            this->publicKey = publicKey;
+            if ("hex" == format) {
+                this->pKey = RSAPublicKeyFromHex(publicKey);
+            } else if ("base64" == format) {
+                this->pKey = RSAPublicKeyFromBase64(publicKey);
+            } else if ("der" == format) {
+                this->pKey = RSAPublicKeyFromDer(publicKey);
+            } else if ("pem" == format) {
+                this->pKey = RSAPublicKeyFromPem(publicKey);
+            } else {
+                this->pKey = RSAPublicKeyFromPem(publicKey);
+            }
+        }
+
+
+        bool RSAPublicKeyVerifier::verifySign(const std::string_view &sign, const std::string_view &data) const {
+            if (pKey == nullptr
+                || sign.empty()
+                || data.empty()) {
+                return false;
+            }
+
+            EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+            if (ctx == nullptr) {
+                std::cerr << "RSAPrivateKeyVerifier::verifySign() Failed to create EVP_MD_CTX_new() " << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            if (!configVerifyParams(ctx, pKey, algorithm)) {
+                EVP_MD_CTX_free(ctx);
+                return "";
+            }
+            if (EVP_DigestVerifyUpdate(ctx, data.data(), data.size()) == 0) {
+                std::cerr << "RSAPrivateKeyVerifier::verifySign() Failed to EVP_DigestVerifyUpdate " << std::endl;
+                printOpenSSLError();
+                EVP_MD_CTX_free(ctx);
+                return false;
+            }
+
+            unsigned char *signData = (unsigned char*) sign.data();
+            if (EVP_DigestVerifyFinal(ctx, signData, sign.size()) == 0) {
+                std::cerr << "RSAPrivateKeyVerifier::verifySign() Failed to EVP_DigestVerifyFinal " << std::endl;
+                printOpenSSLError();
+                EVP_MD_CTX_free(ctx);
+                return "";
+            }
+            EVP_MD_CTX_free(ctx);
+            return true;
+        }
+
+        bool RSAPublicKeyVerifier::verifyHexSign(const std::string_view &hexSign, const std::string_view &data) const {
+            std::string sign = hex_decode(hexSign);
+            return verifySign(sign, data);
+        }
+
+
+        bool RSAPublicKeyVerifier::verifyBase64Sign(const std::string_view &base64Sign, const std::string_view &data) const {
+            std::string sign = base64_decode_url_safe(base64Sign);
+            return verifySign(sign, data);
+        }
+
+
 
     }
 }

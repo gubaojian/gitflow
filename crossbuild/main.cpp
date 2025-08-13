@@ -25,6 +25,7 @@ using namespace camel::crypto;
 void runAllTests() {
     testRsaGenerateKey();
     testRsaWithJava();
+    testRsaSign();
     testHex();
     testBase64();
     testHmac();

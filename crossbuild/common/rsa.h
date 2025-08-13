@@ -44,6 +44,9 @@ namespace camel {
                 std::string getBase64PrivateKey();
                 std::string getPemPublicKey();
                 std::string getPemPrivateKey();
+            public:
+                RSAKeyPairGenerator(const RSAKeyPairGenerator&) = delete;
+                RSAKeyPairGenerator& operator=(const RSAKeyPairGenerator&) = delete;
              private:
                 void clean();
           private:
@@ -115,6 +118,9 @@ namespace camel {
                 }
             }
         public:
+            RSAPrivateKeyDecryptor(const RSAPrivateKeyDecryptor&) = delete;
+            RSAPrivateKeyDecryptor& operator=(const RSAPrivateKeyDecryptor&) = delete;
+        public:
             std::string decrypt(const std::string_view& encryptedData) const;
             std::string decryptFromBase64(const std::string_view& base64EncryptedText) const;
             std::string decryptFromHex(const std::string_view& hexEncryptedText) const;
@@ -130,14 +136,15 @@ namespace camel {
         public:
             /**
               * format = "pem", "hex", "base64", "der"
-              * OAEPPadding PKCS1Padding default
-              * OAEPwithSHA-256andMGF1Padding
-              * OAEPwithSHA-384andMGF1Padding
-              * OAEPwithSHA-512andMGF1Padding
+              * algorithm
+              * MD5withRSA SHA1withRSA SHA256withRSA SHA384withRSA SHA512withRSA
+              * SHA512/224withRSA SHA512/256withRSA
+              * SHA3_256withRSA SHA3_384withRSA SHA3_512withRSA
+              *  or pre algorithm add /PSS SHA256withRSA/PSS
                */
             explicit RSAPrivateKeySigner(const std::string& publicKey,
                   const std::string& format = "pem",
-                  const std::string& paddings = RSA_PKCS1Padding);
+                  const std::string& algorithm = "SHA256withRSA");
             ~RSAPrivateKeySigner() {
                 if (pKey != nullptr) {
                     EVP_PKEY_free(pKey);
@@ -145,14 +152,48 @@ namespace camel {
                 }
             }
         public:
+            RSAPrivateKeySigner(const RSAPrivateKeySigner&) = delete;
+            RSAPrivateKeySigner& operator=(const RSAPrivateKeySigner&) = delete;
+        public:
             std::string sign(const std::string_view& plainText) const;
+            std::string sign2(const std::string_view& plainText) const;
             std::string signToBase64(const std::string_view& plainText) const;
             std::string signToHex(const std::string_view& plainText) const;
         private:
             EVP_PKEY* pKey = nullptr;
             std::string privateKey;
             std::string format;
-            std::string paddings;
+            std::string algorithm;
+        };
+
+        class RSAPublicKeyVerifier{
+        public:
+            /**
+              * format = "pem", "hex", "base64", "der"
+              * algorithm
+              * MD5withRSA SHA1withRSA SHA256withRSA SHA384withRSA SHA512withRSA
+              * SHA512/224withRSA SHA512/256withRSA
+              * SHA3_256withRSA SHA3_384withRSA SHA3_512withRSA
+              *  or pre algorithm add /PSS SHA256withRSA/PSS
+               */
+            explicit RSAPublicKeyVerifier(const std::string& publicKey,
+                  const std::string& format = "pem",
+                  const std::string& algorithm = "SHA256withRSA");
+            ~RSAPublicKeyVerifier() {
+                if (pKey != nullptr) {
+                    EVP_PKEY_free(pKey);
+                    pKey = nullptr;
+                }
+            }
+        public:
+             bool verifySign(const std::string_view& sign, const std::string_view& data) const;
+             bool verifyHexSign(const std::string_view& hexSign, const std::string_view& data) const;
+             bool verifyBase64Sign(const std::string_view& base64Sign, const std::string_view& data) const;
+        private:
+            EVP_PKEY* pKey = nullptr;
+            std::string publicKey;
+            std::string format;
+            std::string algorithm;
         };
 
 
