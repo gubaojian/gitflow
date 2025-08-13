@@ -129,9 +129,14 @@ namespace camel {
 
 
         int maxRsaEncryptPlainTextSize(EVP_PKEY* pkey, const std::string& paddings) {
-            if (paddings == RSA_OAEPPadding) {
+            if (paddings == RSA_PKCS1Padding) { //RSA_PKCS1Padding
+                return (EVP_PKEY_bits(pkey) / 8) - 11;
+            }
+            if (paddings == RSA_OAEPPadding
+                || paddings == RSA_OAEPWithSHA_1AndMGF1Padding) {
                 return (EVP_PKEY_bits(pkey) / 8) - 2*20 -2;
             }
+
             if (paddings == RSA_OAEPwithSHA_256andMGF1Padding) {
                 return (EVP_PKEY_bits(pkey) / 8) - 2*32 - 2;
             }
@@ -144,7 +149,19 @@ namespace camel {
                 return (EVP_PKEY_bits(pkey) / 8) - 2*64 - 2;
             }
 
-            return (EVP_PKEY_bits(pkey) / 8) - 11;//
+            if (paddings == RSA_OAEP_SHA3_256_MGF1_SHA3_256) {
+                return (EVP_PKEY_bits(pkey) / 8) - 2*32 - 2;
+            }
+
+            if (paddings == RSA_OAEP_SHA3_512_MGF1_SHA3_512) {
+                return (EVP_PKEY_bits(pkey) / 8) - 2*64 - 2;
+            }
+
+            int minSize = (EVP_PKEY_bits(pkey) / 8) - 2*64 - 2;
+            if (minSize <= 0) {
+                minSize = (EVP_PKEY_bits(pkey) / 8) - 2*32 - 2;
+            }
+            return minSize;
         }
 
         int rsaEncryptBlockSize(EVP_PKEY* pkey, const std::string& paddings) {
