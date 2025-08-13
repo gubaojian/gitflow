@@ -124,6 +124,16 @@ namespace camel {
                      passed = passed && verifier.verifyBase64Sign(sign, plainText);
                 }
 
+                 {
+                     std::string sign = "aS8S/FCF+T5Ay/zMh9BLH3G49vqSLWUUDwh+7YgtxpoF1pR6/hQMnbhdC6ioFABv8agcUYn6shcV2bqxA8vjJaMEzawnwG4Ms6nOYSbLqmOuWJwgEJ0i8PFD7kuZde/dL79DvNjpk79urs1DbHMV1Turtbi+DSqiVSfzSmF3R0xOPfl89TcroWYOeg3Qbq6zrMRjxAaXxkC6J6gNMI2GV5LDX1/dqVfJ8T80rfJKVKHpyA6hhjvlI+Avg8S22CHdZCnEfdH1WTOFIMN1HJoHnh6I3ae5DB05gUJoUagOJPBN4rcSsKgQ+3hrjYW+rOLZiPsXXUq7xakHH984FJdcAA==";
+                     RSAPrivateKeySigner pssSigner(privateKey, "base64", "SHA256withRSA/PSS");
+                     RSAPublicKeyVerifier passVerifier(publicKey, "base64", "SHA256withRSA/PSS");
+
+                     passed = passed && passVerifier.verifyBase64Sign(pssSigner.signToBase64(plainText), plainText);
+                     passed = passed && passVerifier.verifyBase64Sign(sign, plainText);
+
+                 }
+
 
             }
             if (passed) {

@@ -156,7 +156,6 @@ namespace camel {
             RSAPrivateKeySigner& operator=(const RSAPrivateKeySigner&) = delete;
         public:
             std::string sign(const std::string_view& plainText) const;
-            std::string sign2(const std::string_view& plainText) const;
             std::string signToBase64(const std::string_view& plainText) const;
             std::string signToHex(const std::string_view& plainText) const;
         private:
