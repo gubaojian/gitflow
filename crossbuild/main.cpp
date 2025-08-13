@@ -33,7 +33,8 @@ void runAllTests() {
 void runAllDemos() {
    demoRsaGenerateKey();
    demoRsaEncrypt();
-    demoWithJava();
+    demoRsaSign();
+    //demoWithJava();
    //demoRsaCryptPerf();
    //demoRsaDecryptPerf();
    //demoHmac();

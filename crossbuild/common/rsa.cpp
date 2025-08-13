@@ -527,13 +527,11 @@ namespace camel {
 
         bool configSignParams(EVP_PKEY_CTX *ctx, const std::string& paddings) {
             std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_PKCSV15;
-            std::string mainHash = OSSL_DIGEST_NAME_SHA1;
-            std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
+            std::string signHash = OSSL_DIGEST_NAME_SHA2_256;
             OSSL_PARAM params[] = {
                 OSSL_PARAM_construct_utf8_string(OSSL_SIGNATURE_PARAM_PAD_MODE,
                                              paddingMode.data(), paddingMode.size()),
-                OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_OAEP_DIGEST, mainHash.data(), mainHash.size()),
-                OSSL_PARAM_construct_utf8_string(OSSL_ASYM_CIPHER_PARAM_MGF1_DIGEST, mgf1Hash.data(), mgf1Hash.size()),
+                OSSL_PARAM_construct_utf8_string(OSSL_SIGNATURE_PARAM_DIGEST, signHash.data(), signHash.size()),
                 OSSL_PARAM_END
             };
             if (EVP_PKEY_sign_init_ex(ctx, params) <= 0) {
@@ -953,7 +951,7 @@ namespace camel {
             buffer.resize(rsaMaxSignSize(pKey));
             unsigned char *in = (unsigned char *)plainText.data();
             unsigned char *out = (unsigned char*) buffer.data();
-            size_t outlen =  buffer.size();
+            size_t outlen =  32;
             size_t inlen = plainText.size();
             if (EVP_PKEY_sign(ctx, out, &outlen, in, inlen) <= 0) {
                 std::cerr << "RSAPrivateKeySigner::sign() Failed to EVP_PKEY_sign " << std::endl;
