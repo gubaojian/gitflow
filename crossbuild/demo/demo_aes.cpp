@@ -79,11 +79,20 @@ namespace camel {
             }
 
             {
-                std::string encrypt_data = "vOFzYjL4+1tmFmOeRrb1jxXThBnGdd333kSeyPu74CMiFa0HeSfKUZeRQQ==";
+                std::string encrypt_data = "tQBYHdKDYKUOJkKHspbp5JBbpsCUZi3P3FffN1GP4wxOeCR6V65RrVPyYA==";
                 AESDecryptor decryptor("AES-GCM-SIV", secret, "base64");
                 std::cout << "-----------------------GCM-SIV--------------------------" << std::endl;
                 std::cout << decryptor.decryptFromBase64(encrypt_data) << std::endl;
             }
+
+            {
+                std::string encrypt_data = "YWFhYWFhYWFhYWFhofv7O7/3JKi93yz2dlkhE2IS5A0lj8IkM6pgqqanTw==";
+                AESDecryptor decryptor("AES-CCM", secret, "base64");
+                std::cout << "-----------------------CCM--------------------------" << std::endl;
+                std::cout << decryptor.decryptFromBase64(encrypt_data) << std::endl;
+            }
+
+
 
 
 

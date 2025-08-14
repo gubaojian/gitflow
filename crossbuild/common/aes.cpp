@@ -267,7 +267,7 @@ namespace camel {
                 return "";
             }
 
-            {
+            { // init ctx
                 OSSL_PARAM params[] = {
                     OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_AEAD_IVLEN,
                                             &gcm_iv_len),
@@ -293,22 +293,6 @@ namespace camel {
                 return "";
             }
 
-
-            std::string buffer;
-            buffer.resize(std::max((int)encryptData.size()*2, 512));
-            const unsigned char *in = (const unsigned char *)(encryptData.data() + ivLength);
-            int inl = encryptData.size() - ivLength - gcm_tag_len;
-            unsigned char *out = (unsigned char *)buffer.data();
-            int outl = buffer.size();
-            int totalLen = 0;
-            if (!EVP_DecryptUpdate(ctx, out, &outl, in, inl)) {
-                std::cerr << "aes_gcm_decrypt EVP_DecryptUpdate() failed" << std::endl;
-                printOpenSSLError();
-                EVP_CIPHER_free(cipher);
-                EVP_CIPHER_CTX_free(ctx);
-                return "";
-            }
-            totalLen += outl;
             // set tag for gcm
             {
                 unsigned char *tag = (unsigned char *)(encryptData.data()+ (encryptData.size() - gcm_tag_len));
@@ -327,6 +311,23 @@ namespace camel {
                     return "";
                 }
             }
+
+            std::string buffer;
+            buffer.resize(std::max((int)encryptData.size(), 512));
+            const unsigned char *in = (const unsigned char *)(encryptData.data() + gcm_iv_len);
+            int inl = encryptData.size() - gcm_iv_len - gcm_tag_len;
+            unsigned char *out = (unsigned char *)buffer.data();
+            int outl = buffer.size();
+            int totalLen = 0;
+            if (!EVP_DecryptUpdate(ctx, out, &outl, in, inl)) {
+                std::cerr << "aes_gcm_decrypt EVP_DecryptUpdate() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            totalLen += outl;
+
             int tempLen = buffer.size() - outl;
             if (!EVP_DecryptFinal_ex(ctx, out + outl, &tempLen)) {
                 std::cerr << "aes_normal_decrypt EVP_DecryptFinal_ex() failed" << std::endl;
