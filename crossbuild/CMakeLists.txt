@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22.1)
 project(crossbuild)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 
 
 
@@ -43,6 +43,8 @@ add_executable(crossbuild main.cpp
         common/hex.h
         common/base64.cpp
         common/base64.h
+        common/aes.cpp    
+        common/aes.h
         common/rsa.cpp
         common/rsa.h
         common/hmac.cpp
@@ -62,6 +64,10 @@ add_executable(crossbuild main.cpp
         demo/demo.h
         demo/demo_hmac.cpp
         demo/demo_hmac.h
+        common/digest_util.cpp
+        common/digest_util.h
+        demo/demo_aes.cpp
+        demo/demo_aes.h
 )
 
 target_link_libraries(crossbuild
@@ -90,8 +96,10 @@ set(JNI_SOURCE
     common/file_utils.h
     common/hmac.cpp
     common/hmac.h
-        common/fast_hex.cpp
-        common/fast_hex.h
+    common/fast_hex.cpp
+    common/fast_hex.h
+    common/aes.cpp
+    common/aes.h
 )
 
 add_library(encrypt SHARED

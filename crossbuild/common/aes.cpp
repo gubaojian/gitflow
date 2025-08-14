@@ -1,0 +1,422 @@
+//
+// Created by baojian on 25-8-14.
+//
+
+#include "aes.h"
+
+#include <iostream>
+#include <openssl/rand.h>
+#include <__ostream/basic_ostream.h>
+
+#include "openssl/core_names.h"
+
+namespace camel {
+    namespace crypto {
+        AESKeyGenerator::AESKeyGenerator(int keyBitLength) {
+            this->mKeyBitLength = keyBitLength;
+            this->secretKey.resize(keyBitLength/8);
+            unsigned char * buffer = (unsigned char *)secretKey.data();
+            if (RAND_priv_bytes(buffer, secretKey.size()) != 1) {
+                std::cerr << "AESKeyGenerator::AESKeyGenerator() RAND_priv_bytes() failed" << std::endl;
+                printOpenSSLError();
+                secretKey = "";
+            }
+        }
+
+        std::string AESKeyGenerator::geKey() {
+            return secretKey;
+        }
+
+        std::string AESKeyGenerator::getHexKey() {
+            return hex_encode(secretKey);
+        }
+
+
+        std::string AESKeyGenerator::getBase64Key() {
+            return base64_encode(secretKey);
+        }
+
+    }
+}
+
+
+namespace camel {
+    namespace crypto {
+
+        inline bool algorithmHas(const std::string& algorithm, std::string_view target) {
+            return algorithm.find(target) != std::string::npos;
+        }
+
+        inline std::string aesName(const std::string& secretKey, const std::string& mode) {
+            std::string name = "AES-";
+            if (secretKey.length()*8 == 256) {
+                name.append("256");
+            } else if (secretKey.length()*8 == 192) {
+                name.append("192");
+            } else {
+                name.append("128");
+            }
+            name.append("-");
+            name.append(mode);
+            return name;
+        }
+
+        std::string aes_ecb_decrypt(const std::string_view &encryptData, const std::string& secretKey) {
+            EVP_CIPHER_CTX *ctx = nullptr;
+            EVP_CIPHER *cipher = nullptr;
+            ctx = EVP_CIPHER_CTX_new();
+            if (ctx == nullptr) {
+                std::cerr << "aes_ecb_decrypt EVP_CIPHER_CTX_new() failed" << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            std::string algorithmName = aesName(secretKey, "ECB");
+
+            cipher = EVP_CIPHER_fetch(nullptr, algorithmName.data(), nullptr);
+            if (cipher == nullptr) {
+                std::cerr << "aes_ecb_decrypt EVP_CIPHER_fetch() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+
+            OSSL_PARAM params[] = {
+                OSSL_PARAM_END
+            };
+            const unsigned char *key = (const unsigned char *)secretKey.data();
+            if (!EVP_DecryptInit_ex2(ctx, cipher, key, nullptr, params)) {
+                std::cerr << "aes_ecb_decrypt EVP_EncryptInit_ex2() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+
+            if (!EVP_CIPHER_CTX_set_padding(ctx, 1)) {
+                std::cerr << "aes_ecb_decrypt EVP_CIPHER_CTX_set_padding failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+
+            std::string buffer;
+            buffer.resize(std::max((int)encryptData.size()*2, 512));
+            const unsigned char *in = (const unsigned char *)(encryptData.data());
+            int inl = encryptData.size();
+            unsigned char *out = (unsigned char *)buffer.data();
+            int outl = buffer.size();
+            int totalLen = 0;
+            if (!EVP_DecryptUpdate(ctx, out, &outl, in, inl)) {
+                std::cerr << "aes_ecb_decrypt EVP_DecryptUpdate() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            totalLen += outl;
+            int tempLen = buffer.size() - outl;
+            if (!EVP_DecryptFinal_ex(ctx, out + outl, &tempLen)) {
+                std::cerr << "aes_ecb_decrypt EVP_DecryptFinal_ex() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            totalLen += tempLen;
+            buffer.resize(totalLen);
+            EVP_CIPHER_free(cipher);
+            EVP_CIPHER_CTX_free(ctx);
+            return buffer;
+        }
+
+        /**
+         *
+         * @param encryptData
+         * @param secretKey
+         * @return
+         */
+        std::string aes_normal_decrypt(const std::string_view &encryptData, const std::string& secretKey, const std::string& mode) {
+            EVP_CIPHER_CTX *ctx = nullptr;
+            EVP_CIPHER *cipher = nullptr;
+            ctx = EVP_CIPHER_CTX_new();
+            if (ctx == nullptr) {
+                std::cerr << "aes_normal_decrypt EVP_CIPHER_CTX_new() failed" << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            std::string algorithmName = aesName(secretKey, mode);
+
+            cipher = EVP_CIPHER_fetch(nullptr, algorithmName.data(), nullptr);
+            if (cipher == nullptr) {
+                std::cerr << "aes_normal_decrypt EVP_CIPHER_fetch() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+
+            bool needPadding = true;
+            bool needIV = true;
+            if (mode == "ECB") {
+                needIV = false;
+            }
+            if (mode == "CFB"
+                || mode == "OFB"
+                || mode == "CTR"
+                || mode == "CTS") { //CFB、OFB、CTR、CTS 流式加密，无需padding
+                needPadding = false;
+            }
+            if (needIV) {
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_END
+                };
+                const unsigned char *key = (const unsigned char *)secretKey.data();
+                const unsigned char *iv = (const unsigned char *)encryptData.data();
+                if (!EVP_DecryptInit_ex2(ctx, cipher, key, iv, params)) {
+                    std::cerr << "aes_normal_decrypt EVP_DecryptInit_ex2() failed" << std::endl;
+                    printOpenSSLError();
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+            } else {
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_END
+                };
+                const unsigned char *key = (const unsigned char *)secretKey.data();
+                if (!EVP_DecryptInit_ex2(ctx, cipher, key, nullptr, params)) {
+                    std::cerr << "aes_ecb_decrypt EVP_DecryptInit_ex2() failed" << std::endl;
+                    printOpenSSLError();
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+            }
+            if (needPadding) {
+                if (!EVP_CIPHER_CTX_set_padding(ctx, 1)) {
+                    std::cerr << "aes_normal_decrypt EVP_CIPHER_CTX_set_padding failed" << std::endl;
+                    printOpenSSLError();
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+            }
+            int ivLength = 0;
+            if (needIV) {
+                 ivLength = EVP_CIPHER_get_iv_length(cipher);
+                if (ivLength != 16) {
+                    std::cerr << "aes_normal_decrypt Invalid IV length for AES-CBC: must be 16 bytes" << std::endl;
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+            }
+
+            std::string buffer;
+            buffer.resize(std::max((int)encryptData.size()*2, 512));
+            const unsigned char *in = (const unsigned char *)(encryptData.data() + ivLength);
+            int inl = encryptData.size() - ivLength;
+            unsigned char *out = (unsigned char *)buffer.data();
+            int outl = buffer.size();
+            int totalLen = 0;
+            if (!EVP_DecryptUpdate(ctx, out, &outl, in, inl)) {
+                std::cerr << "aes_normal_decrypt EVP_DecryptUpdate() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            totalLen += outl;
+            int tempLen = buffer.size() - outl;
+            if (!EVP_DecryptFinal_ex(ctx, out + outl, &tempLen)) {
+                std::cerr << "aes_normal_decrypt EVP_DecryptFinal_ex() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            totalLen += tempLen;
+            buffer.resize(totalLen);
+            EVP_CIPHER_free(cipher);
+            EVP_CIPHER_CTX_free(ctx);
+            return buffer;
+        }
+
+        std::string aes_gcm_decrypt(const std::string_view &encryptData, const std::string& secretKey, const std::string& mode) {
+            size_t gcm_iv_len = 12;
+            size_t gcm_tag_len = 16;
+            if (encryptData.size() <= (gcm_iv_len + gcm_tag_len)) {
+                std::cerr << "aes_gcm_decrypt encryptData too short " << std::endl;
+                return "";
+            }
+            EVP_CIPHER_CTX *ctx = nullptr;
+            EVP_CIPHER *cipher = nullptr;
+            ctx = EVP_CIPHER_CTX_new();
+            if (ctx == nullptr) {
+                std::cerr << "aes_gcm_decrypt EVP_CIPHER_CTX_new() failed" << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            std::string algorithmName = aesName(secretKey, mode);
+
+            cipher = EVP_CIPHER_fetch(nullptr, algorithmName.data(), nullptr);
+            if (cipher == nullptr) {
+                std::cerr << "aes_gcm_decrypt EVP_CIPHER_fetch() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+
+            {
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_AEAD_IVLEN,
+                                            &gcm_iv_len),
+                    OSSL_PARAM_END
+                };
+                const unsigned char *key = (const unsigned char *)secretKey.data();
+                const unsigned char *iv = (const unsigned char *)encryptData.data();
+                if (!EVP_DecryptInit_ex2(ctx, cipher, key, iv, params)) {
+                    std::cerr << "aes_gcm_decrypt EVP_DecryptInit_ex2() failed" << std::endl;
+                    printOpenSSLError();
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+            }
+
+
+            int ivLength = EVP_CIPHER_get_iv_length(cipher);
+            if (ivLength != gcm_iv_len) {
+                std::cerr << "aes_gcm_decrypt Invalid IV length for AES-GCM: must be 12 bytes" << std::endl;
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+
+
+            std::string buffer;
+            buffer.resize(std::max((int)encryptData.size()*2, 512));
+            const unsigned char *in = (const unsigned char *)(encryptData.data() + ivLength);
+            int inl = encryptData.size() - ivLength - gcm_tag_len;
+            unsigned char *out = (unsigned char *)buffer.data();
+            int outl = buffer.size();
+            int totalLen = 0;
+            if (!EVP_DecryptUpdate(ctx, out, &outl, in, inl)) {
+                std::cerr << "aes_gcm_decrypt EVP_DecryptUpdate() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            totalLen += outl;
+            // set tag for gcm
+            {
+                unsigned char *tag = (unsigned char *)(encryptData.data()+ (encryptData.size() - gcm_tag_len));
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_octet_string(
+                        OSSL_CIPHER_PARAM_AEAD_TAG,
+                        tag, gcm_tag_len
+                    ),
+                    OSSL_PARAM_END
+                };
+                if (EVP_CIPHER_CTX_set_params(ctx, params) != 1) {
+                    std::cerr << "aes_gcm_decrypt EVP_CIPHER_CTX_set_params() failed" << std::endl;
+                    printOpenSSLError();
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+            }
+            int tempLen = buffer.size() - outl;
+            if (!EVP_DecryptFinal_ex(ctx, out + outl, &tempLen)) {
+                std::cerr << "aes_normal_decrypt EVP_DecryptFinal_ex() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            totalLen += tempLen;
+            buffer.resize(totalLen);
+            EVP_CIPHER_free(cipher);
+            EVP_CIPHER_CTX_free(ctx);
+            return buffer;
+        }
+    }
+}
+
+
+namespace camel {
+    namespace crypto {
+        AESDecryptor::AESDecryptor(const std::string &algorithm, const std::string &secret, const std::string &format) {
+            this->algorithm = algorithm;
+            if (format == "base64") {
+                this->secretKey = base64_decode(secret);
+            } else if (format == "hex") {
+                this->secretKey = hex_decode(secret);
+            }  else if (format == "binary" || format == "raw") {
+                this->secretKey = secret;
+            } else {
+                this->secretKey = secret;
+            }
+        }
+
+        /**
+        * 模式	支持情况（主流 Android 版本）	备注
+        * CBC	全版本支持	需搭配填充（如 PKCS5Padding）
+        * ECB	支持但不推荐	无安全性（块独立加密），官方不建议使用
+        * GCM	API 10+ 支持	AEAD 模式（同时提供加密和认证），推荐使用
+        * GCM-SIV	API 28+ 支持	GCM 的变体，抗重放攻击更强
+        * CTR	支持	流模式，无需填充，适合任意长度数据
+        * CFB/OFB	部分版本支持	流模式，兼容性不如 CTR/GCM
+        * CTS	几乎不支持	未纳入主流加密提供商实现，极少被支持. CTS暂时不支持
+        *   CBC ECB CTR CFB OFB
+         *  https://developer.android.com/reference/javax/crypto/Cipher
+         * @param encryptedData
+         * @return
+         */
+        std::string AESDecryptor::decrypt(const std::string_view &encryptedData) const {
+            if (algorithmHas(algorithm, "CBC")) {
+                return aes_normal_decrypt(encryptedData, secretKey, "CBC");
+            }
+            if (algorithmHas(algorithm, "CFB")) {
+                return aes_normal_decrypt(encryptedData, secretKey, "CFB");
+            }
+            if (algorithmHas(algorithm, "CTR")) {
+                return aes_normal_decrypt(encryptedData, secretKey, "CTR");
+            }
+            if (algorithmHas(algorithm, "CTS")) {
+                std::cerr << "AESDecryptor::decrypt CTS not support, for current version" << std::endl;
+                return "";
+            }
+
+            if (algorithmHas(algorithm, "ECB")) {
+                return aes_normal_decrypt(encryptedData, secretKey, "ECB");
+            }
+
+            if (algorithmHas(algorithm, "OFB")) {
+                return aes_normal_decrypt(encryptedData, secretKey, "OFB");
+            }
+
+            if (algorithmHas(algorithm, "GCM-SIV")) {
+                return aes_gcm_decrypt(encryptedData, secretKey, "GCM-SIV");
+            }
+
+            if (algorithmHas(algorithm, "GCM")) {
+                return aes_gcm_decrypt(encryptedData, secretKey, "GCM");
+            }
+
+            return aes_normal_decrypt(encryptedData, secretKey, "CFB");
+
+        }
+        std::string AESDecryptor::decryptFromHex(const std::string_view &hexEncryptedText) const {
+            return decrypt(hex_decode(hexEncryptedText));
+        }
+
+        std::string AESDecryptor::decryptFromBase64(const std::string_view &base64EncryptedText) const {
+            return decrypt(base64_decode(base64EncryptedText));
+        }
+
+
+
+    }
+}

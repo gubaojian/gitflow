@@ -11,9 +11,6 @@
 #include "openssl/core_names.h"
 
 
-#ifndef OSSL_PKEY_RSA_PAD_MODE_PKCS1
-  #define OSSL_PKEY_RSA_PAD_MODE_PKCS1 "pkcs1"
-#endif
 
 namespace camel {
     namespace crypto {

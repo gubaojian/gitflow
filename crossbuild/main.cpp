@@ -7,6 +7,7 @@
 #include "test/test_base64.h"
 #include "test/test_hex.h"
 #include "demo/demo_rsa.h"
+#include "demo/demo_aes.h"
 #include <iostream>
 #include <cstdio>
 #include <openssl/rsa.h>
@@ -34,12 +35,26 @@ void runAllTests() {
 void runAllDemos() {
    demoRsaGenerateKey();
    demoRsaEncrypt();
-    demoRsaSign();
+   demoRsaSign();
     //demoWithJava();
    //demoRsaCryptPerf();
    //demoRsaDecryptPerf();
    //demoHmac();
    //demoHmacPerf();
+    demoAesGenerateKey();
+    demoAesEncrypt();
+}
+
+/**
+ *  分析安全： https://godbolt.org/
+ * @param data
+ */
+void test(std::string_view data) {
+
+}
+
+void test_memory_not_safe() {
+    test(std::string("hello world, memory safe call"));
 }
 
 int main() {

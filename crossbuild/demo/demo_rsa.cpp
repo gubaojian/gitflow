@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include <sstream>
-
+#include "../common/rsa.h"
 #include "../common/file_utils.h"
 
 using namespace camel::crypto;

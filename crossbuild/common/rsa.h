@@ -140,7 +140,7 @@ namespace camel {
               * MD5withRSA SHA1withRSA SHA256withRSA SHA384withRSA SHA512withRSA
               * SHA512/224withRSA SHA512/256withRSA
               * SHA3_256withRSA SHA3_384withRSA SHA3_512withRSA
-              *  or pre algorithm add /PSS SHA256withRSA/PSS
+              *  or pre algorithm like  SHA384withRSA/PSS SHA256withRSA/PSS
                */
             explicit RSAPrivateKeySigner(const std::string& publicKey,
                   const std::string& format = "pem",
