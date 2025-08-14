@@ -242,9 +242,9 @@ namespace camel {
             return buffer;
         }
 
-        std::string aes_gcm_decrypt(const std::string_view &encryptData, const std::string& secretKey, const std::string& mode) {
-            size_t gcm_iv_len = 12;
-            size_t gcm_tag_len = 16;
+        std::string aes_gcm_ccm_decrypt(const std::string_view &encryptData, const std::string& secretKey, const std::string& mode) {
+            size_t gcm_iv_len = 12; // ccm模式的once
+            size_t gcm_tag_len = 16; // ccm的tag
             if (encryptData.size() <= (gcm_iv_len + gcm_tag_len)) {
                 std::cerr << "aes_gcm_decrypt encryptData too short " << std::endl;
                 return "";
@@ -268,15 +268,31 @@ namespace camel {
             }
 
             { // init ctx
+                unsigned char *tag = (unsigned char *)(encryptData.data()+ (encryptData.size() - gcm_tag_len));
                 OSSL_PARAM params[] = {
                     OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_AEAD_IVLEN,
                                             &gcm_iv_len),
+                    OSSL_PARAM_construct_octet_string(OSSL_CIPHER_PARAM_AEAD_TAG, tag, gcm_tag_len),
                     OSSL_PARAM_END
                 };
                 const unsigned char *key = (const unsigned char *)secretKey.data();
                 const unsigned char *iv = (const unsigned char *)encryptData.data();
-                if (!EVP_DecryptInit_ex2(ctx, cipher, key, iv, params)) {
+
+                /*
+                 * Initialise encrypt operation with the cipher & mode,
+                 * nonce/iv length and tag length parameters.
+                 */
+                if (!EVP_DecryptInit_ex2(ctx, cipher, nullptr, nullptr, params)) {
                     std::cerr << "aes_gcm_decrypt EVP_DecryptInit_ex2() failed" << std::endl;
+                    printOpenSSLError();
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+                //CCM 模式分两步初始化，不然解密不成功，这种写法来自官方demo。
+                /* Initialise key and nonce/iv */
+                if (!EVP_DecryptInit_ex(ctx, NULL, NULL, key, iv)) {
+                    std::cerr << "aes_gcm_decrypt EVP_DecryptInit_ex() failed" << std::endl;
                     printOpenSSLError();
                     EVP_CIPHER_free(cipher);
                     EVP_CIPHER_CTX_free(ctx);
@@ -293,24 +309,7 @@ namespace camel {
                 return "";
             }
 
-            // set tag for gcm
-            {
-                unsigned char *tag = (unsigned char *)(encryptData.data()+ (encryptData.size() - gcm_tag_len));
-                OSSL_PARAM params[] = {
-                    OSSL_PARAM_construct_octet_string(
-                        OSSL_CIPHER_PARAM_AEAD_TAG,
-                        tag, gcm_tag_len
-                    ),
-                    OSSL_PARAM_END
-                };
-                if (EVP_CIPHER_CTX_set_params(ctx, params) != 1) {
-                    std::cerr << "aes_gcm_decrypt EVP_CIPHER_CTX_set_params() failed" << std::endl;
-                    printOpenSSLError();
-                    EVP_CIPHER_free(cipher);
-                    EVP_CIPHER_CTX_free(ctx);
-                    return "";
-                }
-            }
+
 
             std::string buffer;
             buffer.resize(std::max((int)encryptData.size(), 512));
@@ -342,6 +341,8 @@ namespace camel {
             EVP_CIPHER_CTX_free(ctx);
             return buffer;
         }
+
+
     }
 }
 
@@ -399,11 +400,14 @@ namespace camel {
             }
 
             if (algorithmHas(algorithm, "GCM-SIV")) {
-                return aes_gcm_decrypt(encryptedData, secretKey, "GCM-SIV");
+                return aes_gcm_ccm_decrypt(encryptedData, secretKey, "GCM-SIV");
             }
 
             if (algorithmHas(algorithm, "GCM")) {
-                return aes_gcm_decrypt(encryptedData, secretKey, "GCM");
+                return aes_gcm_ccm_decrypt(encryptedData, secretKey, "GCM");
+            }
+            if (algorithmHas(algorithm, "CCM")) {
+                return aes_gcm_ccm_decrypt(encryptedData, secretKey, "CCM");
             }
 
             return aes_normal_decrypt(encryptedData, secretKey, "CFB");
