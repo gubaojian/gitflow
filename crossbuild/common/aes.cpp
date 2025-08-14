@@ -287,7 +287,7 @@ namespace camel {
         }
 
 
-         std::string aes_siv_decrypt(const std::string_view &encryptData, const std::string& secretKey, const std::string& aad) {
+         std::string aes_siv_decrypt(const std::string_view &encryptData, const std::string& secretKey, const std::string_view& aad) {
             EVP_CIPHER_CTX *ctx = nullptr;
             EVP_CIPHER *cipher = nullptr;
             ctx = EVP_CIPHER_CTX_new();
@@ -477,6 +477,9 @@ namespace camel {
             }
             if (algorithmHas(algorithm, "CCM")) {
                 return aes_gcm_ccm_decrypt(encryptedData, secretKey, "CCM", aad);
+            }
+            if (algorithmHas(algorithm, "AES-SIV") || algorithmHas(algorithm, "AES/SIV")) {
+                return aes_siv_decrypt(encryptedData, secretKey, aad);
             }
             std::cerr << "AESDecryptor::decryptWithAAD() not supported algorithm " << algorithm << std::endl;
             return "";
