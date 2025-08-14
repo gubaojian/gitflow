@@ -92,6 +92,23 @@ namespace camel {
                 std::cout << decryptor.decryptFromBase64(encrypt_data) << std::endl;
             }
 
+            {
+                std::string encrypt_data = "nclWxRatjnYuo6UevIdhTOfAFPk8pDbygbiIBbmqlzcoKzPJlVXEkGKPkg==";
+                std::string aad = "Hello World";
+                AESDecryptor decryptor("AES-GCM", secret, "base64");
+                std::cout << "-----------------------GCM  aad test --------------------------" << std::endl;
+                std::cout << decryptor.decryptFromBase64WithAAD(encrypt_data,  aad) << std::endl;
+            }
+
+            {
+                std::string encrypt_data = "PhwUCPlf+zdp9OQ0X23TH0kFgKPkjJotq/Ow3VNXzw==";
+                std::string sivKey = "E7BpQCZlD1hNJYeDUk4RBxOwaUAmZQ9YTSWHg1JOEQc=";
+                AESDecryptor decryptor("AES-SIV", sivKey, "base64");
+                std::cout << "----------------------- AES-SIV --------------------------" << std::endl;
+                std::cout << decryptor.decryptFromBase64(encrypt_data) << std::endl;
+            }
+
+
 
 
 

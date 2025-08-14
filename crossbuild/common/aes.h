@@ -40,18 +40,29 @@ namespace camel {
 
         class AESDecryptor {
         public:
+            /**
+             *
+             * @param algorithm  AES/GCM/NoPadding、AES/GCM-SIV/NoPadding AES/CCM/NoPadding
+             * 其它模式默认PKCS5Padding 如 AES/CBC/PKCS5Padding
+             * @param secret
+             * @param format
+             */
             explicit AESDecryptor(const std::string& algorithm,
-                const std::string& secret,
-                const std::string& format    = CAMEL_KEY_FORMAT_BASE64
-                );
+                                  const std::string& secret,
+                                  const std::string& format    = CAMEL_KEY_FORMAT_BASE64
+            );
             ~AESDecryptor() = default;
         public:
             std::string decrypt(const std::string_view& encryptedData) const;
             std::string decryptFromBase64(const std::string_view& base64EncryptedText) const;
             std::string decryptFromHex(const std::string_view& hexEncryptedText) const;
+        public:
+            std::string decryptWithAAD(const std::string_view& encryptedData, const std::string_view& aad) const;
+            std::string decryptFromBase64WithAAD(const std::string_view& base64EncryptedText, const std::string_view& aad) const;
+            std::string decryptFromHexWithAAD(const std::string_view& hexEncryptedText, const std::string_view& aad) const;
         private:
             std::string secretKey;
-            std::string algorithm;
+            std::string algorithm; //无需传入 128 256，长度根据秘钥自动计算。
         };
     }
 }

@@ -61,75 +61,6 @@ namespace camel {
             return name;
         }
 
-        std::string aes_ecb_decrypt(const std::string_view &encryptData, const std::string& secretKey) {
-            EVP_CIPHER_CTX *ctx = nullptr;
-            EVP_CIPHER *cipher = nullptr;
-            ctx = EVP_CIPHER_CTX_new();
-            if (ctx == nullptr) {
-                std::cerr << "aes_ecb_decrypt EVP_CIPHER_CTX_new() failed" << std::endl;
-                printOpenSSLError();
-                return "";
-            }
-            std::string algorithmName = aesName(secretKey, "ECB");
-
-            cipher = EVP_CIPHER_fetch(nullptr, algorithmName.data(), nullptr);
-            if (cipher == nullptr) {
-                std::cerr << "aes_ecb_decrypt EVP_CIPHER_fetch() failed" << std::endl;
-                printOpenSSLError();
-                EVP_CIPHER_CTX_free(ctx);
-                return "";
-            }
-
-            OSSL_PARAM params[] = {
-                OSSL_PARAM_END
-            };
-            const unsigned char *key = (const unsigned char *)secretKey.data();
-            if (!EVP_DecryptInit_ex2(ctx, cipher, key, nullptr, params)) {
-                std::cerr << "aes_ecb_decrypt EVP_EncryptInit_ex2() failed" << std::endl;
-                printOpenSSLError();
-                EVP_CIPHER_free(cipher);
-                EVP_CIPHER_CTX_free(ctx);
-                return "";
-            }
-
-            if (!EVP_CIPHER_CTX_set_padding(ctx, 1)) {
-                std::cerr << "aes_ecb_decrypt EVP_CIPHER_CTX_set_padding failed" << std::endl;
-                printOpenSSLError();
-                EVP_CIPHER_free(cipher);
-                EVP_CIPHER_CTX_free(ctx);
-                return "";
-            }
-
-            std::string buffer;
-            buffer.resize(std::max((int)encryptData.size()*2, 512));
-            const unsigned char *in = (const unsigned char *)(encryptData.data());
-            int inl = encryptData.size();
-            unsigned char *out = (unsigned char *)buffer.data();
-            int outl = buffer.size();
-            int totalLen = 0;
-            if (!EVP_DecryptUpdate(ctx, out, &outl, in, inl)) {
-                std::cerr << "aes_ecb_decrypt EVP_DecryptUpdate() failed" << std::endl;
-                printOpenSSLError();
-                EVP_CIPHER_free(cipher);
-                EVP_CIPHER_CTX_free(ctx);
-                return "";
-            }
-            totalLen += outl;
-            int tempLen = buffer.size() - outl;
-            if (!EVP_DecryptFinal_ex(ctx, out + outl, &tempLen)) {
-                std::cerr << "aes_ecb_decrypt EVP_DecryptFinal_ex() failed" << std::endl;
-                printOpenSSLError();
-                EVP_CIPHER_free(cipher);
-                EVP_CIPHER_CTX_free(ctx);
-                return "";
-            }
-            totalLen += tempLen;
-            buffer.resize(totalLen);
-            EVP_CIPHER_free(cipher);
-            EVP_CIPHER_CTX_free(ctx);
-            return buffer;
-        }
-
         /**
          *
          * @param encryptData
@@ -213,7 +144,7 @@ namespace camel {
             }
 
             std::string buffer;
-            buffer.resize(std::max((int)encryptData.size()*2, 512));
+            buffer.resize(std::max((int)encryptData.size() + 8, 512));
             const unsigned char *in = (const unsigned char *)(encryptData.data() + ivLength);
             int inl = encryptData.size() - ivLength;
             unsigned char *out = (unsigned char *)buffer.data();
@@ -242,18 +173,21 @@ namespace camel {
             return buffer;
         }
 
-        std::string aes_gcm_ccm_decrypt(const std::string_view &encryptData, const std::string& secretKey, const std::string& mode) {
+        std::string aes_gcm_ccm_decrypt(const std::string_view &encryptData,
+            const std::string& secretKey,
+            const std::string& mode,
+            const std::string_view &aad) {
             size_t gcm_iv_len = 12; // ccm模式的once
             size_t gcm_tag_len = 16; // ccm的tag
             if (encryptData.size() <= (gcm_iv_len + gcm_tag_len)) {
-                std::cerr << "aes_gcm_decrypt encryptData too short " << std::endl;
+                std::cerr << "aes_gcm_ccm_decrypt encryptData too short " << std::endl;
                 return "";
             }
             EVP_CIPHER_CTX *ctx = nullptr;
             EVP_CIPHER *cipher = nullptr;
             ctx = EVP_CIPHER_CTX_new();
             if (ctx == nullptr) {
-                std::cerr << "aes_gcm_decrypt EVP_CIPHER_CTX_new() failed" << std::endl;
+                std::cerr << "aes_gcm_ccm_decrypt EVP_CIPHER_CTX_new() failed" << std::endl;
                 printOpenSSLError();
                 return "";
             }
@@ -261,7 +195,7 @@ namespace camel {
 
             cipher = EVP_CIPHER_fetch(nullptr, algorithmName.data(), nullptr);
             if (cipher == nullptr) {
-                std::cerr << "aes_gcm_decrypt EVP_CIPHER_fetch() failed" << std::endl;
+                std::cerr << "aes_gcm_ccm_decrypt EVP_CIPHER_fetch() failed" << std::endl;
                 printOpenSSLError();
                 EVP_CIPHER_CTX_free(ctx);
                 return "";
@@ -283,7 +217,7 @@ namespace camel {
                  * nonce/iv length and tag length parameters.
                  */
                 if (!EVP_DecryptInit_ex2(ctx, cipher, nullptr, nullptr, params)) {
-                    std::cerr << "aes_gcm_decrypt EVP_DecryptInit_ex2() failed" << std::endl;
+                    std::cerr << "aes_gcm_ccm_decrypt EVP_DecryptInit_ex2() failed" << std::endl;
                     printOpenSSLError();
                     EVP_CIPHER_free(cipher);
                     EVP_CIPHER_CTX_free(ctx);
@@ -292,7 +226,7 @@ namespace camel {
                 //CCM 模式分两步初始化，不然解密不成功，这种写法来自官方demo。
                 /* Initialise key and nonce/iv */
                 if (!EVP_DecryptInit_ex(ctx, NULL, NULL, key, iv)) {
-                    std::cerr << "aes_gcm_decrypt EVP_DecryptInit_ex() failed" << std::endl;
+                    std::cerr << "aes_gcm_ccm_decrypt EVP_DecryptInit_ex() failed" << std::endl;
                     printOpenSSLError();
                     EVP_CIPHER_free(cipher);
                     EVP_CIPHER_CTX_free(ctx);
@@ -303,23 +237,33 @@ namespace camel {
 
             int ivLength = EVP_CIPHER_get_iv_length(cipher);
             if (ivLength != gcm_iv_len) {
-                std::cerr << "aes_gcm_decrypt Invalid IV length for AES-GCM: must be 12 bytes" << std::endl;
+                std::cerr << "aes_gcm_ccm_decrypt Invalid IV length for AES-GCM: must be 12 bytes" << std::endl;
                 EVP_CIPHER_free(cipher);
                 EVP_CIPHER_CTX_free(ctx);
                 return "";
             }
 
+            if (!aad.empty()) {
+                int outlen;
+                const unsigned char *aadIn = (const unsigned char *)aad.data();
+                if (!EVP_DecryptUpdate(ctx, NULL, &outlen, aadIn, aad.size())) {
+                    std::cerr << "aes_gcm_ccm_decrypt EVP_DecryptUpdate() aad failed" << std::endl;
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+            }
 
 
             std::string buffer;
-            buffer.resize(std::max((int)encryptData.size(), 512));
+            buffer.resize(std::max((int)encryptData.size() + 8, 512));
             const unsigned char *in = (const unsigned char *)(encryptData.data() + gcm_iv_len);
             int inl = encryptData.size() - gcm_iv_len - gcm_tag_len;
             unsigned char *out = (unsigned char *)buffer.data();
             int outl = buffer.size();
             int totalLen = 0;
             if (!EVP_DecryptUpdate(ctx, out, &outl, in, inl)) {
-                std::cerr << "aes_gcm_decrypt EVP_DecryptUpdate() failed" << std::endl;
+                std::cerr << "aes_gcm_ccm_decrypt EVP_DecryptUpdate() failed" << std::endl;
                 printOpenSSLError();
                 EVP_CIPHER_free(cipher);
                 EVP_CIPHER_CTX_free(ctx);
@@ -327,6 +271,108 @@ namespace camel {
             }
             totalLen += outl;
 
+            int tempLen = buffer.size() - outl;
+            if (!EVP_DecryptFinal_ex(ctx, out + outl, &tempLen)) {
+                std::cerr << "aes_gcm_ccm_decrypt EVP_DecryptFinal_ex() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            totalLen += tempLen;
+            buffer.resize(totalLen);
+            EVP_CIPHER_free(cipher);
+            EVP_CIPHER_CTX_free(ctx);
+            return buffer;
+        }
+
+
+         std::string aes_siv_decrypt(const std::string_view &encryptData, const std::string& secretKey, const std::string& aad) {
+            EVP_CIPHER_CTX *ctx = nullptr;
+            EVP_CIPHER *cipher = nullptr;
+            ctx = EVP_CIPHER_CTX_new();
+            if (ctx == nullptr) {
+                std::cerr << "aes_siv_decrypt EVP_CIPHER_CTX_new() failed" << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            const int iv_length = 16;
+            std::string ctrlKey(secretKey.data(), secretKey.size()/2);
+            //std::string macKey(secretKey.data() + secretKey.size()/2, secretKey.size()/2);
+            std::string algorithmName = aesName(ctrlKey, "SIV");
+
+            std::cout << algorithmName << std::endl;
+
+            cipher = EVP_CIPHER_fetch(nullptr, algorithmName.data(), nullptr);
+            if (cipher == nullptr) {
+                std::cerr << "aes_siv_decrypt EVP_CIPHER_fetch() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+
+
+            { // init ctx
+                size_t gcm_iv_len = 12;
+                int gcm_tag_len  = 16;
+                unsigned char *tag = (unsigned char *)(encryptData.data()+ (encryptData.size() - gcm_tag_len));
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_AEAD_IVLEN,
+                                            &gcm_iv_len),
+                    OSSL_PARAM_construct_octet_string(OSSL_CIPHER_PARAM_AEAD_TAG, tag, gcm_tag_len),
+                    OSSL_PARAM_END
+                };
+                const unsigned char *key = (const unsigned char *)secretKey.data();
+                const unsigned char *iv = (const unsigned char *)encryptData.data();
+
+                /*
+                 * Initialise encrypt operation with the cipher & mode,
+                 * nonce/iv length and tag length parameters.
+                 */
+                if (!EVP_DecryptInit_ex2(ctx, cipher, nullptr, nullptr, params)) {
+                    std::cerr << "aes_gcm_ccm_decrypt EVP_DecryptInit_ex2() failed" << std::endl;
+                    printOpenSSLError();
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+                //CCM 模式分两步初始化，不然解密不成功，这种写法来自官方demo。
+                /* Initialise key and nonce/iv */
+                if (!EVP_DecryptInit_ex(ctx, NULL, NULL, key, iv)) {
+                    std::cerr << "aes_gcm_ccm_decrypt EVP_DecryptInit_ex() failed" << std::endl;
+                    printOpenSSLError();
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+            }
+
+            std::cout << EVP_CIPHER_get_key_length(cipher) << std::endl;
+
+            /**
+            int ivLength = EVP_CIPHER_get_iv_length(cipher);
+            if (ivLength != iv_length) {
+                std::cerr << "aes_siv_decrypt Invalid IV length for AES-SIV: must be 16 bytes" << std::endl;
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }*/
+
+            std::string buffer;
+            buffer.resize(std::max((int)encryptData.size() + 8, 512));
+            const unsigned char *in = (const unsigned char *)(encryptData.data() + iv_length);
+            int inl = encryptData.size() - iv_length;
+            unsigned char *out = (unsigned char *)buffer.data();
+            int outl = buffer.size();
+            int totalLen = 0;
+            if (!EVP_DecryptUpdate(ctx, out, &outl, in, inl)) {
+                std::cerr << "aes_normal_decrypt EVP_DecryptUpdate() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            totalLen += outl;
             int tempLen = buffer.size() - outl;
             if (!EVP_DecryptFinal_ex(ctx, out + outl, &tempLen)) {
                 std::cerr << "aes_normal_decrypt EVP_DecryptFinal_ex() failed" << std::endl;
@@ -341,6 +387,7 @@ namespace camel {
             EVP_CIPHER_CTX_free(ctx);
             return buffer;
         }
+
 
 
     }
@@ -387,7 +434,7 @@ namespace camel {
                 return aes_normal_decrypt(encryptedData, secretKey, "CTR");
             }
             if (algorithmHas(algorithm, "CTS")) {
-                std::cerr << "AESDecryptor::decrypt CTS not support, for current version" << std::endl;
+                std::cerr << "AESDecryptor::decrypt CTS not support, please use AES-CBC" << std::endl;
                 return "";
             }
 
@@ -400,19 +447,24 @@ namespace camel {
             }
 
             if (algorithmHas(algorithm, "GCM-SIV")) {
-                return aes_gcm_ccm_decrypt(encryptedData, secretKey, "GCM-SIV");
+                return aes_gcm_ccm_decrypt(encryptedData, secretKey, "GCM-SIV", "");
             }
 
             if (algorithmHas(algorithm, "GCM")) {
-                return aes_gcm_ccm_decrypt(encryptedData, secretKey, "GCM");
+                return aes_gcm_ccm_decrypt(encryptedData, secretKey, "GCM", "");
             }
             if (algorithmHas(algorithm, "CCM")) {
-                return aes_gcm_ccm_decrypt(encryptedData, secretKey, "CCM");
+                return aes_gcm_ccm_decrypt(encryptedData, secretKey, "CCM", "");
             }
 
-            return aes_normal_decrypt(encryptedData, secretKey, "CFB");
+            if (algorithmHas(algorithm, "AES-SIV") || algorithmHas(algorithm, "AES/SIV")) {
+                return aes_siv_decrypt(encryptedData, secretKey, "");
+            }
 
+            std::cerr << "AESDecryptor::decrypt() not supported algorithm " << algorithm << std::endl;
+            return "";
         }
+
         std::string AESDecryptor::decryptFromHex(const std::string_view &hexEncryptedText) const {
             return decrypt(hex_decode(hexEncryptedText));
         }
@@ -420,6 +472,30 @@ namespace camel {
         std::string AESDecryptor::decryptFromBase64(const std::string_view &base64EncryptedText) const {
             return decrypt(base64_decode(base64EncryptedText));
         }
+
+        std::string AESDecryptor::decryptWithAAD(const std::string_view &encryptedData, const std::string_view &aad) const {
+            if (algorithmHas(algorithm, "GCM-SIV")) {
+                return aes_gcm_ccm_decrypt(encryptedData, secretKey, "GCM-SIV", aad);
+            }
+
+            if (algorithmHas(algorithm, "GCM")) {
+                return aes_gcm_ccm_decrypt(encryptedData, secretKey, "GCM", aad);
+            }
+            if (algorithmHas(algorithm, "CCM")) {
+                return aes_gcm_ccm_decrypt(encryptedData, secretKey, "CCM", aad);
+            }
+            std::cerr << "AESDecryptor::decryptWithAAD() not supported algorithm " << algorithm << std::endl;
+            return "";
+        }
+
+        std::string AESDecryptor::decryptFromHexWithAAD(const std::string_view &encryptedData, const std::string_view &aad) const {
+            return decryptWithAAD(hex_decode(encryptedData), aad);
+        }
+
+        std::string AESDecryptor::decryptFromBase64WithAAD(const std::string_view &encryptedData, const std::string_view &aad) const {
+            return decryptWithAAD(base64_decode(encryptedData), aad);
+        }
+
 
 
 
