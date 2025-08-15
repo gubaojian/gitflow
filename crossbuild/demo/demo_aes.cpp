@@ -36,29 +36,53 @@ namespace camel {
             {
                 std::string encrypt_data = "rfr0VnPzg929JoCSBtlPrw==";
                 AESDecryptor decryptor("AES-ECB", secret, "base64");
+                std::cout << "-----------------------AES-ECB--------------------------" << std::endl;
 
                 std::cout << decryptor.decryptFromBase64(encrypt_data) << std::endl;
+                AESEncryptor encryptor("AES-ECB", secret, "base64");
+                {
+                    std::cout << encryptor.encryptToBase64(plainText) << std::endl;
+                    std::cout << decryptor.decrypt(encryptor.encrypt(plainText)) << std::endl;
+                }
             }
 
             {
                 std::string encrypt_data = "zae5jVqbThlULDChZnLQ3S0trsirtK30bNRqVtnsLWg=";
                 AESDecryptor decryptor("AES-CBC", secret, "base64");
+                std::cout << "-----------------------AES-CBC--------------------------" << std::endl;
 
                 std::cout << decryptor.decryptFromBase64(encrypt_data) << std::endl;
+                AESEncryptor encryptor("AES-CBC", secret, "base64");
+                {
+                    std::cout << encryptor.encryptToBase64(plainText) << std::endl;
+                    std::cout << decryptor.decrypt(encryptor.encrypt(plainText)) << std::endl;
+                }
             }
 
             {
                 std::string encrypt_data = "8Zq8VyrE+LKBcDk6+X+34pW8u8tM02fIbQnC5mKLLg==";
                 AESDecryptor decryptor("AES-CFB", secret, "base64");
+                std::cout << "-----------------------AES-CFB--------------------------" << std::endl;
 
                 std::cout << decryptor.decryptFromBase64(encrypt_data) << std::endl;
+                AESEncryptor encryptor("AES-CFB", secret, "base64");
+                {
+                    std::cout << encryptor.encryptToBase64(plainText) << std::endl;
+                    std::cout << decryptor.decrypt(encryptor.encrypt(plainText)) << std::endl;
+                }
             }
 
             {
                 std::string encrypt_data = "8UF1bVkvDko+Wg6Qsqvg8Ee8eqk/S/+oTtHlMG4JWg==";
                 AESDecryptor decryptor("AES-CTR", secret, "base64");
+                std::cout << "-----------------------AES-CTR--------------------------" << std::endl;
 
                 std::cout << decryptor.decryptFromBase64(encrypt_data) << std::endl;
+                AESEncryptor encryptor("AES-CTR", secret, "base64");
+                {
+                    std::cout << encryptor.encryptToBase64(plainText) << std::endl;
+                    std::cout << decryptor.decrypt(encryptor.encrypt(plainText)) << std::endl;
+                }
             }
 
 
@@ -66,8 +90,14 @@ namespace camel {
             {
                 std::string encrypt_data = "ilctqYJZDKYLC5d1kb3vY4jb8Exr4DZyEV+6Pi2Hkw==";
                 AESDecryptor decryptor("AES-OFB", secret, "base64");
+                std::cout << "-----------------------AES-OFB--------------------------" << std::endl;
 
                 std::cout << decryptor.decryptFromBase64(encrypt_data) << std::endl;
+                AESEncryptor encryptor("AES-OFB", secret, "base64");
+                {
+                    std::cout << encryptor.encryptToBase64(plainText) << std::endl;
+                    std::cout << decryptor.decrypt(encryptor.encrypt(plainText)) << std::endl;
+                }
             }
 
 
