@@ -228,7 +228,7 @@ namespace camel {
                 EVP_CIPHER_CTX_free(ctx);
                 return "";
             }
-            std::string combineBuffer; // iv(tag) + buffer
+            std::string combineBuffer; // iv + buffer + tag
             combineBuffer.resize(std::max((int)plainData.size()*2 + 64, 512));
 
             { // init ctx
