@@ -106,8 +106,8 @@ namespace camel {
                 std::cout << decryptor.decryptFromBase64WithAAD(encrypt_data,  aad) << std::endl;
                 AESEncryptor encryptor("AES-GCM", secret, "base64");
                 {
-                    std::cout << encryptor.encryptToBase64(plainText) << std::endl;
-                    std::cout << decryptor.decrypt(encryptor.encrypt(plainText)) << std::endl;
+                    std::cout << encryptor.encryptToBase64WithAAD(plainText, aad) << std::endl;
+                    std::cout << decryptor.decryptWithAAD(encryptor.encryptWithAAD(plainText, aad), aad) << std::endl;
                 }
             }
 

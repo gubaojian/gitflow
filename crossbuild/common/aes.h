@@ -41,6 +41,10 @@ namespace camel {
                 std::string encrypt(const std::string_view& plainText) const;
                 std::string encryptToBase64(const std::string_view& plainText) const;
                 std::string encryptToHex(const std::string_view& plainText) const;
+            public:
+                std::string encryptWithAAD(const std::string_view& plainText, const std::string_view& aad) const;
+                std::string encryptToBase64WithAAD(const std::string_view& plainText, const std::string_view& aad) const;
+                std::string encryptToHexWithAAD(const std::string_view& plainText, const std::string_view& aad) const;
             private:
                  std::string secretKey;
                  std::string algorithm; //无需传入位数如：128 256，支持传入AES-GCM 即可，长度根据秘钥自动计算。

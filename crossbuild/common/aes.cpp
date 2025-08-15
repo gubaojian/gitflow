@@ -704,7 +704,31 @@ namespace camel {
             return base64_encode(encrypt(plainText));
         }
 
+        std::string AESEncryptor::encryptWithAAD(const std::string_view &plainText, const std::string_view &aad) const {
+            if (algorithmHas(algorithm, "GCM-SIV")) {
+                return aes_gcm_ccm_encrypt(plainText, secretKey, "GCM-SIV", aad);
+            }
 
+            if (algorithmHas(algorithm, "GCM")) {
+                return aes_gcm_ccm_encrypt(plainText, secretKey, "GCM", aad);
+            }
+            if (algorithmHas(algorithm, "CCM")) {
+                return aes_gcm_ccm_encrypt(plainText, secretKey, "CCM", aad);
+            }
+            if (algorithmHas(algorithm, "AES-SIV") || algorithmHas(algorithm, "AES/SIV")) {
+                return aes_siv_encrypt(plainText, secretKey, aad);
+            }
+            std::cerr << "AESEncryptor::encryptWithAAD() not supported algorithm " << algorithm << std::endl;
+            return "";
+        }
+
+        std::string AESEncryptor::encryptToHexWithAAD(const std::string_view &plainText, const std::string_view &aad) const {
+            return hex_encode(encryptWithAAD(plainText, aad));
+        }
+
+        std::string AESEncryptor::encryptToBase64WithAAD(const std::string_view &plainText, const std::string_view &aad) const {
+            return base64_encode(encryptWithAAD(plainText, aad));
+        }
 
     }
 }
