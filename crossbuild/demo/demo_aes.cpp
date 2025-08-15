@@ -32,6 +32,7 @@ namespace camel {
         void demoAesEncrypt() {
             std::cout <<"--------------AES ENCRYPT ---------------" << std::endl;
             std::string secret = "E7BpQCZlD1hNJYeDUk4RBw==";
+            std::string plainText = "hello world rsa";
             {
                 std::string encrypt_data = "rfr0VnPzg929JoCSBtlPrw==";
                 AESDecryptor decryptor("AES-ECB", secret, "base64");
@@ -106,6 +107,12 @@ namespace camel {
                 AESDecryptor decryptor("AES-SIV", sivKey, "base64");
                 std::cout << "----------------------- AES-SIV --------------------------" << std::endl;
                 std::cout << decryptor.decryptFromBase64(encrypt_data) << std::endl;
+
+                AESEncryptor encryptor("AES-SIV", sivKey, "base64");
+                {
+                    std::cout << encryptor.encryptToBase64(plainText) << std::endl;
+                }
+
             }
 
 

@@ -18,7 +18,7 @@ namespace camel {
             explicit AESKeyGenerator(int keyBitLength=128); //128 192 256
             ~AESKeyGenerator() = default;
         public:
-            std::string geKey();
+            std::string getKey();
             std::string getHexKey();
             std::string getBase64Key();
         private:
@@ -26,16 +26,24 @@ namespace camel {
             int mKeyBitLength = 128;
         };
 
+        //return combine ctrkey and mackey, which is double length of the noraml aes key
+        std::string genSivKey(int keyBitLength=128);
+        std::string genHexSivKey(int keyBitLength=128);
+        std::string genBase64ivKey(int keyBitLength=128);
+
         class AESEncryptor {
             public:
-                explicit AESEncryptor(const std::string& secret, const std::string& format = CAMEL_KEY_FORMAT_BASE64);
+            explicit AESEncryptor(const std::string& algorithm,
+                              const std::string& secret,
+                              const std::string& format    = CAMEL_KEY_FORMAT_BASE64);
             ~AESEncryptor() = default;
             public:
                 std::string encrypt(const std::string_view& plainText) const;
                 std::string encryptToBase64(const std::string_view& plainText) const;
                 std::string encryptToHex(const std::string_view& plainText) const;
             private:
-               std::string secretKey;
+                 std::string secretKey;
+                 std::string algorithm; //无需传入位数如：128 256，支持传入AES-GCM 即可，长度根据秘钥自动计算。
         };
 
         class AESDecryptor {
@@ -62,7 +70,7 @@ namespace camel {
             std::string decryptFromHexWithAAD(const std::string_view& hexEncryptedText, const std::string_view& aad) const;
         private:
             std::string secretKey;
-            std::string algorithm; //无需传入 128 256，长度根据秘钥自动计算。
+            std::string algorithm; //无需传入位数如：128 256，支持传入AES-GCM 即可，长度根据秘钥自动计算。
         };
     }
 }

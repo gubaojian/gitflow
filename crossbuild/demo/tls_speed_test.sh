@@ -1,0 +1,1 @@
+/Users/baojian/code/gitflow/crossbuild/deps/openssl/bin/openssl speed -elapsed
