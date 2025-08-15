@@ -82,6 +82,12 @@ namespace camel {
             return name;
         }
 
+        inline bool checkAesKeySizeValid(const int keyBitLength) {
+            return keyBitLength == 256
+                   || keyBitLength == 192
+                   || keyBitLength == 128;
+        }
+
         /**
          *
          * @param encryptData
