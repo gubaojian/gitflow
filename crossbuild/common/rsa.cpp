@@ -1117,7 +1117,5 @@ namespace camel {
             return verifySign(sign, data);
         }
 
-
-
     }
 }
