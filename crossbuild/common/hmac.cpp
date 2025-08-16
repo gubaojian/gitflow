@@ -373,3 +373,43 @@ namespace camel {
         }
     }
 }
+
+namespace camel {
+    namespace crypto {
+        namespace DigestUtils {
+
+            inline std::string macSign(const std::string& algorithm, const std::string_view& data, const std::string_view& secret) {
+                std::string secretStr(secret);
+                MacSigner macSigner(algorithm, secretStr);
+                return macSigner.sign(data);
+            }
+
+            inline std::string macSignToHex(const std::string& algorithm, const std::string_view& data, const std::string_view& secret) {
+                std::string secretStr(secret);
+                MacSigner macSigner(algorithm, secretStr);
+                return macSigner.signToHex(data);
+            }
+
+            inline std::string macSignToBase64(const std::string& algorithm, const std::string_view& data, const std::string_view& secret) {
+                std::string secretStr(secret);
+                MacSigner macSigner(algorithm, secretStr);
+                return macSigner.signToBase64(data);
+            }
+
+
+
+            std::string hmac_sha256(const std::string_view& data, const std::string_view& secret) {
+                return macSign("HMAC/SHA2-256", data, secret);
+            }
+
+            std::string hmac_sha256ToHex(const std::string_view& data, const std::string_view& secret) {
+                return macSignToHex("HMAC/SHA2-256", data, secret);
+            }
+
+            std::string hmac_sha256ToBase64(const std::string_view& data, const std::string_view& secret) {
+                return macSignToBase64("HMAC/SHA2-256", data, secret);
+            }
+        }
+    }
+}
+

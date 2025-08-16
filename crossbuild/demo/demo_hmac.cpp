@@ -15,7 +15,7 @@ namespace camel {
 
         void demoHmac() {
             HMACSha2_256Signer signer("hello world");
-            MacSigner fastSigner("SHA2-256", "hello world");
+            MacSigner fastSigner("HMAC/SHA2-256", "hello world");
             std::string result = "ti+NvaQtWG3u4+iNv/7MWgR48gACs+bWZ8iTUAUpJwQ=";
             std::string data = "test sign";
             std::cout << signer.signToBase64(data) << std::endl;

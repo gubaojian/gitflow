@@ -26,6 +26,7 @@ namespace camel {
                 printOpenSSLError();
                 return "";
             }
+
             EVP_MD_CTX *ctx = EVP_MD_CTX_new();
             if (ctx == nullptr) {
                 std::cerr << "MessageDigest::digest() Failed to EVP_MD_CTX_new() " << std::endl;
@@ -210,7 +211,7 @@ namespace camel {
                 std::string md5Sha1ToHex(const std::string_view& data) {
                     return digestToHex("MD5-SHA1", data);
                 }
-        
+
                 std::string md5Sha1ToBase64(const std::string_view& data) {
                     return digestToBase64("MD5-SHA1", data);
                 }
@@ -284,13 +285,13 @@ namespace camel {
                 }
 
                 std::string sha512_256(const std::string_view& data) {
-                    return digest("SHA2-256/256", data);
+                    return digest("SHA2-512/256", data);
                 }
                 std::string sha512_256ToHex(const std::string_view& data) {
-                    return digestToHex("SHA2-256/256", data);
+                    return digestToHex("SHA2-512/256", data);
                 }
                 std::string sha512_256ToBase64(const std::string_view& data) {
-                    return digestToBase64("SHA2-256/256", data);
+                    return digestToBase64("SHA2-512/256", data);
                 }
                 std::string sha3_224(const std::string_view& data) {
                     return digest("SHA3-224", data);
@@ -351,6 +352,26 @@ namespace camel {
                     return digestToBase64("SM3", data);
                 }
 
+                std::string blake2s_256(const std::string_view& data) {
+                    return digest("BLAKE2s256", data);
+                }
+                std::string blake2s_256ToHex(const std::string_view& data) {
+                    return digestToHex("BLAKE2s256", data);
+                }
+                std::string blake2s_256ToBase64(const std::string_view& data) {
+                    return digestToBase64("BLAKE2s256", data);
+                }
+
+                std::string blake2b_512(const std::string_view& data) {
+                    return digest("BLAKE2b512", data);
+                }
+                std::string blake2b_512ToHex(const std::string_view& data) {
+                    return digestToHex("BLAKE2b512", data);
+                }
+                std::string blake2b_512ToBase64(const std::string_view& data) {
+                    return digestToBase64("BLAKE2b512", data);
+                }
+
                 std::string shake128(const std::string_view& data, const size_t hashLength) {
                     return xof_digest("SHAKE128", hashLength, data);
                 }
@@ -364,15 +385,15 @@ namespace camel {
                 }
 
                 std::string shake256(const std::string_view& data, const size_t hashLength) {
-                    return xof_digest("SHA256", hashLength, data);
+                    return xof_digest("SHAKE256", hashLength, data);
                 }
 
                 std::string shake256ToHex(const std::string_view& data, const size_t hashLength) {
-                    return xof_digestToHex("SHA256", hashLength, data);
+                    return xof_digestToHex("SHAKE256", hashLength, data);
                 }
 
                 std::string shake256ToBase64(const std::string_view& data, const size_t hashLength) {
-                    return xof_digestToBase64("SHA256", hashLength, data);
+                    return xof_digestToBase64("SHAKE256", hashLength, data);
                 }
     }
 }

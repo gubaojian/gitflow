@@ -116,6 +116,20 @@ namespace camel {
                 passed = passed && digest.digestToHex(plainData) == hash;
             }
 
+            {
+                MessageDigest digest("BLAKE2b512");
+                std::string hash = "70ef25e53601512140ff61ac3d4e33e55abbb0855054101e151184bd70c08c72f30676fbed592ce7cbf7dd88883eb56a1c693b673ab5befbeb3e0d257a6eba84";
+                std::cout << digest.digestToHex(plainData) << std::endl;
+                passed = passed && digest.digestToHex(plainData) == hash;
+            }
+
+            {
+                MessageDigest digest("BLAKE2s256");
+                std::string hash = "2268b1ec879567f51e8eb600e085a3e9445cdd2d187119bdb1c4b3bf8f526a0b";
+                std::cout << digest.digestToHex(plainData) << std::endl;
+                passed = passed && digest.digestToHex(plainData) == hash;
+            }
+
 
             {
                 XOFMessageDigest digest("SHAKE256", 64);

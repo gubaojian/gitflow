@@ -47,7 +47,7 @@ namespace camel {
          * like KMAC128:myapp_v1
          * like CMAC/AES-128
          * like GMAC/AES-128-GCM
-         * like  BLAKE2BMAC
+         * like BLAKE2BMAC
          * like SIPHASH
          */
         class MacSigner {
@@ -78,6 +78,13 @@ namespace camel {
         private:
             std::string nonce;  // 用于POLY1305的nonce
         };
+
+        namespace DigestUtils {
+            std::string hmac_sha256(const std::string_view& data, const std::string_view& secret);
+            std::string hmac_sha256ToHex(const std::string_view& data, const std::string_view& secret);
+            std::string hmac_sha256ToBase64(const std::string_view& data, const std::string_view& secret);
+        }
+
 
     }
 }

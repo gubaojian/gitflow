@@ -119,6 +119,14 @@ namespace camel {
                 std::string sm3ToHex(const std::string_view& data);
                 std::string sm3ToBase64(const std::string_view& data);
 
+                std::string blake2s_256(const std::string_view& data);
+                std::string blake2s_256ToHex(const std::string_view& data);
+                std::string blake2s_256ToBase64(const std::string_view& data);
+
+                std::string blake2b_512(const std::string_view& data);
+                std::string blake2b_512ToHex(const std::string_view& data);
+                std::string blake2b_512ToBase64(const std::string_view& data);
+
                 std::string shake128(const std::string_view& data, const size_t hashLength);
                 std::string shake128ToHex(const std::string_view& data, const size_t hashLength);
                 std::string shake128ToBase64(const std::string_view& data, const size_t hashLength);
