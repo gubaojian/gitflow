@@ -29,6 +29,12 @@ namespace camel {
         EVP_PKEY* RSAPrivateKeyFromDerByBio(const std::string& derKey);
         EVP_PKEY* RSAPrivateKeyFrom(const std::string& privateKey, const std::string& format);
 
+        inline void freeRsaEvpKey(EVP_PKEY* key) {
+            if (key != nullptr) {
+                EVP_PKEY_free(key);
+            }
+        }
+
 
         class RSAKeyPairGenerator {
             public:
@@ -56,13 +62,16 @@ namespace camel {
         };
 
 
-
+         // https://developer.android.com/reference/javax/crypto/Cipher
+        //same like java, MGF1 use default sha1
         constexpr auto  RSA_PKCS1Padding = "PKCS1Padding";
         constexpr auto  RSA_OAEPPadding = "OAEPPadding";
         constexpr auto  RSA_OAEPWithSHA_1AndMGF1Padding = " OAEPWithSHA-1AndMGF1Padding";
         constexpr auto  RSA_OAEPwithSHA_256andMGF1Padding = "OAEPwithSHA-256andMGF1Padding";
         constexpr auto  RSA_OAEPwithSHA_384andMGF1Padding = "OAEPwithSHA-384andMGF1Padding";
         constexpr auto  RSA_OAEPwithSHA_512andMGF1Padding = "OAEPwithSHA-512andMGF1Padding";
+
+        //both main and MGF1  use same hash like  sha256
         constexpr auto  RSA_OAEP_SHA256_MGF1_SHA256 = "RSA_OAEP_SHA256_MGF1_SHA256";
         constexpr auto  RSA_OAEP_SHA512_MGF1_SHA512 = "RSA_OAEP_SHA512_MGF1_SHA512";
         constexpr auto  RSA_OAEP_SHA3_256_MGF1_SHA3_256 = "RSA_OAEP_SHA3_256_MGF1_SHA3_256";
@@ -71,15 +80,16 @@ namespace camel {
         class RSAPublicKeyEncryptor {
            public:
                /**
+                * https://developer.android.com/reference/javax/crypto/Cipher
                * format = "pem", "hex", "base64", "der"
                * OAEPPadding PKCS1Padding default
                * OAEPwithSHA-256andMGF1Padding
                * OAEPwithSHA-384andMGF1Padding
                * OAEPwithSHA-512andMGF1Padding
                 */
-               explicit RSAPublicKeyEncryptor(const std::string& publicKey,
-                    const std::string& format = "pem",
-                    const std::string& paddings= RSA_PKCS1Padding);
+               explicit RSAPublicKeyEncryptor(const std::string_view& publicKey,
+                    const std::string_view& format = "pem",
+                    const std::string_view& paddings= RSA_PKCS1Padding);
 
                ~RSAPublicKeyEncryptor() = default;
 
@@ -108,15 +118,16 @@ namespace camel {
         class RSAPrivateKeyDecryptor {
         public:
             /**
+             * https://developer.android.com/reference/javax/crypto/Cipher
               * format = "pem", "hex", "base64", "der"
               * OAEPPadding PKCS1Padding default
               * OAEPwithSHA-256andMGF1Padding
               * OAEPwithSHA-384andMGF1Padding
               * OAEPwithSHA-512andMGF1Padding
                */
-            explicit RSAPrivateKeyDecryptor(const std::string& privateKey,
-                  const std::string& format = "pem",
-                  const std::string& paddings = RSA_PKCS1Padding);
+            explicit RSAPrivateKeyDecryptor(const std::string_view& privateKey,
+                  const std::string_view& format = "pem",
+                  const std::string_view& paddings = RSA_PKCS1Padding);
             ~RSAPrivateKeyDecryptor() = default;
         public:
             RSAPrivateKeyDecryptor(const RSAPrivateKeyDecryptor&) = delete;
@@ -153,9 +164,9 @@ namespace camel {
               * SHA3_256withRSA SHA3_384withRSA SHA3_512withRSA
               *  or pre algorithm like  SHA384withRSA/PSS SHA256withRSA/PSS
                */
-            explicit RSAPrivateKeySigner(const std::string& publicKey,
-                  const std::string& format = "pem",
-                  const std::string& algorithm = "SHA256withRSA");
+            explicit RSAPrivateKeySigner(const std::string_view& publicKey,
+                  const std::string_view& format = "pem",
+                  const std::string_view& algorithm = "SHA256withRSA");
             ~RSAPrivateKeySigner() = default;
         public:
             RSAPrivateKeySigner(const RSAPrivateKeySigner&) = delete;
@@ -191,9 +202,9 @@ namespace camel {
               * SHA3_256withRSA SHA3_384withRSA SHA3_512withRSA
               *  or pre algorithm add /PSS SHA256withRSA/PSS
                */
-            explicit RSAPublicKeyVerifier(const std::string& publicKey,
-                  const std::string& format = "pem",
-                  const std::string& algorithm = "SHA256withRSA");
+            explicit RSAPublicKeyVerifier(const std::string_view& publicKey,
+                  const std::string_view& format = "pem",
+                  const std::string_view& algorithm = "SHA256withRSA");
             ~RSAPublicKeyVerifier() = default;
         public:
              bool verifySign(const std::string_view& sign, const std::string_view& data) const;
@@ -216,26 +227,123 @@ namespace camel {
             EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
         };
 
-        // PKCS1Padding
-        namespace RSAPKCS1V15PaddingUtil {
+        // PKCS1Padding RSA-PKCS#1 v1.5 填充模式
+        namespace RSAPKCS1Utils {
             std::string encrypt(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data);
-            std::string decrypt(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+            std::string encryptToHex(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data);
+            std::string encryptToBase64(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data);
 
-            /**
-             * 复用EVP_PKEY，减少key解析创建开销, 比上面快
-             * @param publicKey
-             * @param format
-             * @param data
-             * @return
-             */
-            std::string encryptByEvpKey(EVP_PKEY* publicKey, const std::string_view& data);
+            std::string decrypt(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+            std::string decryptFromHex(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+            std::string decryptFromBase64(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+
+            // 复用EVP_PKEY，减少key解析创建开销, 复用key，速度快一些
+            std::string encryptByEVPKey(EVP_PKEY* publicKey, const std::string_view& data);
+            std::string encryptByEVPKeyToHex(EVP_PKEY* publicKey, const std::string_view& data);
+            std::string encryptByEVPKeyToBase64(EVP_PKEY* publicKey, const std::string_view& data);
+
             std::string decryptByEvpKey(EVP_PKEY* privateKey,  const std::string_view& data);
+            std::string decryptByEvpKeyFromHex(EVP_PKEY* privateKey,  const std::string_view& data);
+            std::string decryptByEvpKeyFromBase64(EVP_PKEY* privateKey,  const std::string_view& data);
         }
 
-        //RSA_OAEPwithSHA_256andMGF1Padding
-        namespace RSAOAEPSha256PaddingUtil {
-            std::string encrypt(const std::string_view& publicKey, const std::string_view& data);
-            std::string decrypt(const std::string_view& privateKey, const std::string_view& data);
+
+        // 和 java的 RSA_OAEPwithSHA_256andMGF1Padding 模式相同
+        // RSA-OAEP padding模式 模式，主哈希用 SHA2-256， MGF1 用默认sha1
+        namespace RSAOAEPSha256MGF1Sha1Utils {
+            std::string encrypt(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data);
+            std::string encryptToHex(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data);
+            std::string encryptToBase64(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data);
+
+            std::string decrypt(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+            std::string decryptFromHex(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+            std::string decryptFromBase64(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+
+            // 复用EVP_PKEY，减少key解析创建开销, 复用key，速度快一些
+            std::string encryptByEVPKey(EVP_PKEY* publicKey, const std::string_view& data);
+            std::string encryptByEVPKeyToHex(EVP_PKEY* publicKey, const std::string_view& data);
+            std::string encryptByEVPKeyToBase64(EVP_PKEY* publicKey, const std::string_view& data);
+
+            std::string decryptByEvpKey(EVP_PKEY* privateKey,  const std::string_view& data);
+            std::string decryptByEvpKeyFromHex(EVP_PKEY* privateKey,  const std::string_view& data);
+            std::string decryptByEvpKeyFromBase64(EVP_PKEY* privateKey,  const std::string_view& data);
+        }
+
+        /**
+         * JAVA通过设置 OAEPParameterSpec来设置MGF1的hash算法
+        * OAEPParameterSpec oaepSpec = new OAEPParameterSpec(
+        *     "SHA-256",          // 主哈希函数
+        *     "MGF1",             // 掩码生成函数
+        *     new MGF1ParameterSpec("SHA-256"),  // MGF1 使用 SHA-256
+        *     PSource.PSpecified.DEFAULT
+        * );
+
+         */
+        // RSA-OAEP 模式，主哈希和 MGF1 哈希均使用 SHA-256
+        namespace RSAOAEPSha256MGF1Sha256Utils {
+            std::string encrypt(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data);
+            std::string encryptToHex(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data);
+            std::string encryptToBase64(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data);
+
+            std::string decrypt(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+            std::string decryptFromHex(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+            std::string decryptFromBase64(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+
+            // 复用EVP_PKEY，减少key解析创建开销, 复用key，速度快一些
+            std::string encryptByEVPKey(EVP_PKEY* publicKey, const std::string_view& data);
+            std::string encryptByEVPKeyToHex(EVP_PKEY* publicKey, const std::string_view& data);
+            std::string encryptByEVPKeyToBase64(EVP_PKEY* publicKey, const std::string_view& data);
+
+            std::string decryptByEvpKey(EVP_PKEY* privateKey,  const std::string_view& data);
+            std::string decryptByEvpKeyFromHex(EVP_PKEY* privateKey,  const std::string_view& data);
+            std::string decryptByEvpKeyFromBase64(EVP_PKEY* privateKey,  const std::string_view& data);
+        }
+
+
+        /**
+         * 默认 PKCS1 填充， Java默认签名填充方式
+         */
+        namespace RSAPKCS1Sha256SignUtils {
+            std::string sign(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+            std::string signToHex(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+            std::string signToBase64(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+
+            bool verify(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data, const std::string_view& sign);
+            bool verifyHexSign(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data, const std::string_view& sign);
+            bool verifyBase64Sign(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data, const std::string_view& sign);
+
+            // 复用EVP_PKEY，减少key解析创建开销, 复用key，速度快一些
+            std::string signByEVPKey(EVP_PKEY* privateKey, const std::string_view& data);
+            std::string signByEVPKeyToHex(EVP_PKEY* privateKey, const std::string_view& data);
+            std::string signByEVPKeyToBase64(EVP_PKEY* privateKey, const std::string_view& data);
+
+            bool verifyByEVPKey(EVP_PKEY* publicKey,  const std::string_view& data, const std::string_view& sign);
+            bool verifyHexSignByEVPKey(EVP_PKEY* publicKey,  const std::string_view& data, const std::string_view& sign);
+            bool verifyBase64SignByEVPKey(EVP_PKEY* publicKey,  const std::string_view& data, const std::string_view& sign);
+        }
+
+        /**
+         * 默认 PSS 填充
+         */
+        namespace RSAPSSSha256SignUtils {
+            std::string sign(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+            std::string signToHex(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+            std::string signToBase64(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
+
+            bool verify(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data, const std::string_view& sign);
+            bool verifyHexSign(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data, const std::string_view& sign);
+            bool verifyBase64Sign(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data, const std::string_view& sign);
+
+
+            // 复用EVP_PKEY，减少key解析创建开销, 复用key，速度快一些
+            std::string signByEVPKey(EVP_PKEY* privateKey, const std::string_view& data);
+            std::string signByEVPKeyToHex(EVP_PKEY* privateKey, const std::string_view& data);
+            std::string signByEVPKeyToBase64(EVP_PKEY* privateKey, const std::string_view& data);
+
+            bool verifyByEVPKey(EVP_PKEY* publicKey,  const std::string_view& data, const std::string_view& sign);
+            bool verifyHexSignByEVPKey(EVP_PKEY* publicKey,  const std::string_view& data, const std::string_view& sign);
+            bool verifyBase64SignByEVPKey(EVP_PKEY* publicKey,  const std::string_view& data, const std::string_view& sign);
+
         }
 
 

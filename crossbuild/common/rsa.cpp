@@ -890,7 +890,7 @@ namespace camel {
     namespace crypto {
 
 
-        RSAPublicKeyEncryptor::RSAPublicKeyEncryptor(const std::string &publicKey, const std::string &format, const std::string &paddings) {
+        RSAPublicKeyEncryptor::RSAPublicKeyEncryptor(const std::string_view &publicKey, const std::string_view &format, const std::string_view &paddings) {
             this->paddings = paddings;
             this->format = format;
             this->publicKey = publicKey;
@@ -965,9 +965,9 @@ namespace camel {
 
 namespace camel {
     namespace crypto {
-        RSAPrivateKeyDecryptor::RSAPrivateKeyDecryptor(const std::string& privateKey,
-                  const std::string& format,
-                  const std::string& paddings) {
+        RSAPrivateKeyDecryptor::RSAPrivateKeyDecryptor(const std::string_view& privateKey,
+                  const std::string_view& format,
+                  const std::string_view& paddings) {
             this->paddings = paddings;
             this->format = format;
             this->privateKey = privateKey;
@@ -1050,9 +1050,9 @@ namespace camel {
 
 namespace camel {
     namespace crypto {
-        RSAPrivateKeySigner::RSAPrivateKeySigner(const std::string& privateKey,
-                  const std::string& format,
-                  const std::string& algorithm) {
+        RSAPrivateKeySigner::RSAPrivateKeySigner(const std::string_view& privateKey,
+                  const std::string_view& format,
+                  const std::string_view& algorithm) {
             this->algorithm = algorithm;
             this->format = format;
             this->privateKey = privateKey;
@@ -1121,9 +1121,9 @@ namespace camel {
 
 namespace camel {
     namespace crypto {
-        RSAPublicKeyVerifier::RSAPublicKeyVerifier(const std::string& publicKey,
-                  const std::string& format,
-                  const std::string& algorithm) {
+        RSAPublicKeyVerifier::RSAPublicKeyVerifier(const std::string_view& publicKey,
+                  const std::string_view& format,
+                  const std::string_view& algorithm) {
             this->algorithm = algorithm;
             this->format = format;
             this->publicKey = publicKey;
@@ -1141,7 +1141,9 @@ namespace camel {
                 evpKey = RSAPublicKeyFrom(publicKey, format);
             }
             if (evpKey == nullptr) {
-                return "";
+                std::cerr << "RSAPrivateKeyVerifier::verifySign() Failed to create EVP_PKEY " << std::endl;
+                printOpenSSLError();
+                return false;
             }
             EvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
 
@@ -1149,11 +1151,11 @@ namespace camel {
             if (ctx == nullptr) {
                 std::cerr << "RSAPrivateKeyVerifier::verifySign() Failed to create EVP_MD_CTX_new() " << std::endl;
                 printOpenSSLError();
-                return "";
+                return false;
             }
             if (!configVerifyParams(ctx, evpKey, algorithm)) {
                 EVP_MD_CTX_free(ctx);
-                return "";
+                return false;
             }
             if (EVP_DigestVerifyUpdate(ctx, data.data(), data.size()) == 0) {
                 std::cerr << "RSAPrivateKeyVerifier::verifySign() Failed to EVP_DigestVerifyUpdate " << std::endl;
@@ -1167,7 +1169,7 @@ namespace camel {
                 std::cerr << "RSAPrivateKeyVerifier::verifySign() Failed to EVP_DigestVerifyFinal " << std::endl;
                 printOpenSSLError();
                 EVP_MD_CTX_free(ctx);
-                return "";
+                return false;
             }
             EVP_MD_CTX_free(ctx);
             return true;
@@ -1183,6 +1185,353 @@ namespace camel {
             std::string sign = base64_decode_url_safe(base64Sign);
             return verifySign(sign, data);
         }
+
+    }
+}
+
+namespace camel {
+    namespace crypto {
+
+        inline std::string rsaPublicEncrypt(const std::string_view& paddings,
+            const std::string_view& publicKey,
+            const std::string_view& format,
+            const std::string_view& data,
+            EVP_PKEY* externalPublicKey) {
+            RSAPublicKeyEncryptor encryptor(publicKey, format, paddings);
+            if (externalPublicKey != nullptr) {
+                encryptor.setExternalEvpKey(externalPublicKey);
+            }
+            return encryptor.encrypt(data);
+        }
+
+        inline std::string rsaPublicEncryptToHex(const std::string_view& paddings,
+            const std::string_view& publicKey,
+            const std::string_view& format,
+            const std::string_view& data,
+            EVP_PKEY* externalPublicKey) {
+            RSAPublicKeyEncryptor encryptor(publicKey, format, paddings);
+            if (externalPublicKey != nullptr) {
+                encryptor.setExternalEvpKey(externalPublicKey);
+            }
+            return encryptor.encryptToHex(data);
+        }
+
+        inline std::string rsaPublicEncryptToBase64(const std::string_view& paddings,
+            const std::string_view& publicKey,
+            const std::string_view& format,
+            const std::string_view& data,
+            EVP_PKEY* externalPublicKey) {
+            RSAPublicKeyEncryptor encryptor(publicKey, format, paddings);
+            if (externalPublicKey != nullptr) {
+                encryptor.setExternalEvpKey(externalPublicKey);
+            }
+            return encryptor.encryptToBase64(data);
+        }
+
+        inline std::string rsaPrivateDecrypt(const std::string_view& paddings,
+            const std::string_view& privateKey,
+            const std::string_view& format,
+            const std::string_view& data,
+            EVP_PKEY* externalPrivateKey) {
+            RSAPrivateKeyDecryptor decryptor(privateKey, format, paddings);
+            if ( externalPrivateKey != nullptr) {
+                decryptor.setExternalEvpKey( externalPrivateKey);
+            }
+            return decryptor.decrypt(data);
+        }
+
+        inline std::string rsaPrivateDecryptFromHex(const std::string_view& paddings,
+            const std::string_view& privateKey,
+            const std::string_view& format,
+            const std::string_view& data,
+            EVP_PKEY* externalPrivateKey) {
+            RSAPrivateKeyDecryptor decryptor(privateKey, format, paddings);
+            if ( externalPrivateKey != nullptr) {
+                decryptor.setExternalEvpKey( externalPrivateKey);
+            }
+            return decryptor.decryptFromHex(data);
+        }
+
+        inline std::string rsaPrivateDecryptFromBase64(const std::string_view& paddings,
+            const std::string_view& privateKey,
+            const std::string_view& format,
+            const std::string_view& data,
+            EVP_PKEY* externalPrivateKey) {
+            RSAPrivateKeyDecryptor decryptor(privateKey, format, paddings);
+            if ( externalPrivateKey != nullptr) {
+                decryptor.setExternalEvpKey( externalPrivateKey);
+            }
+            return decryptor.decryptFromBase64(data);
+        }
+
+        namespace RSAPKCS1Utils {
+
+            std::string encrypt(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data) {
+                return rsaPublicEncrypt("PKCS1Padding", publicKey, format, data, nullptr);
+            }
+
+            std::string encryptToHex(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data) {
+                return rsaPublicEncryptToHex("PKCS1Padding", publicKey, format, data, nullptr);
+            }
+            std::string encryptToBase64(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data) {
+                return rsaPublicEncryptToBase64("PKCS1Padding", publicKey, format, data, nullptr);
+            }
+
+            std::string decrypt(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data) {
+                return rsaPrivateDecrypt("PKCS1Padding", privateKey, format, data, nullptr);
+            }
+            std::string decryptFromHex(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data) {
+                return rsaPrivateDecryptFromHex("PKCS1Padding", privateKey, format, data, nullptr);
+            }
+            std::string decryptFromBase64(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data) {
+                return rsaPrivateDecryptFromBase64("PKCS1Padding", privateKey, format, data, nullptr);
+            }
+
+            // 复用EVP_PKEY，减少key解析创建开销, 复用key，速度快一些
+            std::string encryptByEVPKey(EVP_PKEY* publicKey, const std::string_view& data) {
+                return rsaPublicEncrypt("PKCS1Padding", "", "", data, publicKey);
+            }
+            std::string encryptByEVPKeyToHex(EVP_PKEY* publicKey, const std::string_view& data) {
+                return rsaPublicEncryptToHex("PKCS1Padding", "", "", data, publicKey);
+            }
+            std::string encryptByEVPKeyToBase64(EVP_PKEY* publicKey, const std::string_view& data) {
+                return rsaPublicEncryptToBase64("PKCS1Padding", "", "", data, publicKey);
+            }
+
+            std::string decryptByEvpKey(EVP_PKEY* privateKey,  const std::string_view& data) {
+                return rsaPrivateDecrypt("PKCS1Padding", "", "", data, privateKey);
+            }
+            std::string decryptByEvpKeyFromHex(EVP_PKEY* privateKey,  const std::string_view& data) {
+                return rsaPrivateDecryptFromHex("PKCS1Padding", "", "", data, privateKey);
+            }
+            std::string decryptByEvpKeyFromBase64(EVP_PKEY* privateKey,  const std::string_view& data) {
+                return rsaPrivateDecryptFromBase64("PKCS1Padding", "", "", data, privateKey);
+            }
+        }
+
+        namespace RSAOAEPSha256AndMGF1PaddingUtils {
+            std::string encrypt(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data) {
+                return rsaPublicEncrypt("RSA_OAEPwithSHA_256andMGF1Padding", publicKey, format, data, nullptr);
+            }
+            std::string encryptToHex(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data) {
+                return rsaPublicEncryptToHex("RSA_OAEPwithSHA_256andMGF1Padding", publicKey, format, data, nullptr);
+            }
+            std::string encryptToBase64(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data) {
+                return rsaPublicEncryptToBase64("RSA_OAEPwithSHA_256andMGF1Padding", publicKey, format, data, nullptr);
+            }
+
+            std::string decrypt(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data) {
+                return rsaPrivateDecrypt("RSA_OAEPwithSHA_256andMGF1Padding", privateKey, format, data, nullptr);
+            }
+            std::string decryptFromHex(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data) {
+                return rsaPrivateDecryptFromHex("RSA_OAEPwithSHA_256andMGF1Padding", privateKey, format, data, nullptr);
+            }
+            std::string decryptFromBase64(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data) {
+                return rsaPrivateDecryptFromBase64("RSA_OAEPwithSHA_256andMGF1Padding", privateKey, format, data, nullptr);
+            }
+
+            // 复用EVP_PKEY，减少key解析创建开销, 复用key，速度快一些
+            std::string encryptByEVPKey(EVP_PKEY* publicKey, const std::string_view& data) {
+                return rsaPublicEncrypt("RSA_OAEPwithSHA_256andMGF1Padding", "", "", data, publicKey);
+            }
+            std::string encryptByEVPKeyToHex(EVP_PKEY* publicKey, const std::string_view& data) {
+                return rsaPublicEncryptToHex("RSA_OAEPwithSHA_256andMGF1Padding", "", "", data, publicKey);
+            }
+            std::string encryptByEVPKeyToBase64(EVP_PKEY* publicKey, const std::string_view& data) {
+                return rsaPublicEncryptToBase64("RSA_OAEPwithSHA_256andMGF1Padding", "", "", data, publicKey);
+            }
+
+            std::string decryptByEvpKey(EVP_PKEY* privateKey,  const std::string_view& data) {
+                return rsaPrivateDecrypt("RSA_OAEPwithSHA_256andMGF1Padding", "", "", data, privateKey);
+            }
+            std::string decryptByEvpKeyFromHex(EVP_PKEY* privateKey,  const std::string_view& data) {
+                return rsaPrivateDecryptFromHex("RSA_OAEPwithSHA_256andMGF1Padding", "", "", data, privateKey);
+            }
+            std::string decryptByEvpKeyFromBase64(EVP_PKEY* privateKey,  const std::string_view& data) {
+                return rsaPrivateDecryptFromBase64("RSA_OAEPwithSHA_256andMGF1Padding", "", "", data, privateKey);
+            }
+        }
+
+    }
+}
+
+
+namespace camel {
+    namespace crypto {
+        inline bool rsaPublicVerify(const std::string_view& algorithm,
+            const std::string_view& publicKey,
+            const std::string_view& format,
+            const std::string_view& data,
+            const std::string_view& sign,
+            EVP_PKEY* externalPublicKey) {
+            RSAPublicKeyVerifier verifier(publicKey, format, algorithm);
+            if (externalPublicKey != nullptr) {
+                verifier.setExternalEvpKey(externalPublicKey);
+            }
+            return verifier.verifySign(sign, data);
+        }
+
+        inline bool rsaPublicVerifyHexSign(const std::string_view& algorithm,
+            const std::string_view& publicKey,
+            const std::string_view& format,
+            const std::string_view& data,
+            const std::string_view& sign,
+            EVP_PKEY* externalPublicKey) {
+            RSAPublicKeyVerifier verifier(publicKey, format, algorithm);
+            if (externalPublicKey != nullptr) {
+                verifier.setExternalEvpKey(externalPublicKey);
+            }
+            return verifier.verifyHexSign(sign, data);
+        }
+
+        inline bool rsaPublicVerifyBase64Sign(const std::string_view& algorithm,
+            const std::string_view& publicKey,
+            const std::string_view& format,
+            const std::string_view& data,
+            const std::string_view& sign,
+            EVP_PKEY* externalPublicKey) {
+            RSAPublicKeyVerifier verifier(publicKey, format, algorithm);
+            if (externalPublicKey != nullptr) {
+                verifier.setExternalEvpKey(externalPublicKey);
+            }
+            return verifier.verifyBase64Sign(sign, data);
+        }
+
+        inline std::string rsaPrivateSign(const std::string_view&  algorithm,
+            const std::string_view& privateKey,
+            const std::string_view& format,
+            const std::string_view& data,
+            EVP_PKEY* externalPrivateKey) {
+            RSAPrivateKeySigner signer(privateKey, format, algorithm);
+            if ( externalPrivateKey != nullptr) {
+                signer.setExternalEvpKey( externalPrivateKey);
+            }
+            return signer.sign(data);
+        }
+
+        inline std::string rsaPrivateSignToHex(const std::string_view&  algorithm,
+            const std::string_view& privateKey,
+            const std::string_view& format,
+            const std::string_view& data,
+            EVP_PKEY* externalPrivateKey) {
+            RSAPrivateKeySigner signer(privateKey, format, algorithm);
+            if ( externalPrivateKey != nullptr) {
+                signer.setExternalEvpKey( externalPrivateKey);
+            }
+            return signer.signToHex(data);
+        }
+
+        inline std::string rsaPrivateSignToBase64(const std::string_view&  algorithm,
+            const std::string_view& privateKey,
+            const std::string_view& format,
+            const std::string_view& data,
+            EVP_PKEY* externalPrivateKey) {
+            RSAPrivateKeySigner signer(privateKey, format, algorithm);
+            if ( externalPrivateKey != nullptr) {
+                signer.setExternalEvpKey( externalPrivateKey);
+            }
+            return signer.signToBase64(data);
+        }
+
+
+        /**
+         * 默认 PKCS1 填充， Java默认签名填充方式
+         */
+        namespace RSAPKCS1Sha256SignUtils {
+
+            std::string sign(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data) {
+                return rsaPrivateSign("SHA256withRSA", privateKey, format, data, nullptr);
+            }
+
+            std::string signToHex(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data) {
+                return rsaPrivateSignToHex("SHA256withRSA", privateKey, format, data, nullptr);
+            }
+            std::string signToBase64(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data) {
+                return rsaPrivateSignToBase64("SHA256withRSA", privateKey, format, data, nullptr);
+            }
+
+            bool verify(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data, const std::string_view& sign) {
+                return rsaPublicVerify("SHA256withRSA", publicKey, format, data, sign, nullptr);
+            }
+            bool verifyHexSign(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data, const std::string_view& sign) {
+                return rsaPublicVerifyHexSign("SHA256withRSA", publicKey, format, data, sign, nullptr);
+            }
+            bool verifyBase64Sign(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data, const std::string_view& sign) {
+                return rsaPublicVerifyBase64Sign("SHA256withRSA", publicKey, format, data, sign, nullptr);
+            }
+
+            // 复用EVP_PKEY，减少key解析创建开销, 复用key，速度快一些
+            std::string signByEVPKey(EVP_PKEY* privateKey, const std::string_view& data) {
+                return rsaPrivateSign("SHA256withRSA", "", "", data, privateKey);
+            }
+            std::string signByEVPKeyToHex(EVP_PKEY* privateKey, const std::string_view& data) {
+                return rsaPrivateSignToHex("SHA256withRSA", "", "", data, privateKey);
+            }
+            std::string signByEVPKeyToBase64(EVP_PKEY* privateKey, const std::string_view& data) {
+                return rsaPrivateSignToBase64("SHA256withRSA", "", "", data, privateKey);
+            }
+
+            bool verifyByEVPKey(EVP_PKEY* publicKey,  const std::string_view& data, const std::string_view& sign) {
+                return rsaPublicVerify("SHA256withRSA", "", "", data, sign, publicKey);
+            }
+            bool verifyHexSignByEVPKey(EVP_PKEY* publicKey,  const std::string_view& data, const std::string_view& sign) {
+                return rsaPublicVerifyHexSign("SHA256withRSA", "", "", data, sign, publicKey);
+            }
+            bool verifyBase64SignByEVPKey(EVP_PKEY* publicKey,  const std::string_view& data, const std::string_view& sign) {
+                return rsaPublicVerifyBase64Sign("SHA256withRSA", "", "", data, sign, publicKey);
+            }
+        }
+
+        /**
+         * 默认 PSS 填充
+         */
+         namespace RSAPSSSha256SignUtils {
+
+            std::string sign(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data) {
+                return rsaPrivateSign("SHA256withRSA/PSS", privateKey, format, data, nullptr);
+            }
+
+            std::string signToHex(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data) {
+                return rsaPrivateSignToHex("SHA256withRSA/PSS", privateKey, format, data, nullptr);
+            }
+            std::string signToBase64(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data) {
+                return rsaPrivateSignToBase64("SHA256withRSA/PSS", privateKey, format, data, nullptr);
+            }
+
+            bool verify(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data, const std::string_view& sign) {
+                return rsaPublicVerify("SHA256withRSA/PSS", publicKey, format, data, sign, nullptr);
+            }
+            bool verifyHexSign(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data, const std::string_view& sign) {
+                return rsaPublicVerifyHexSign("SHA256withRSA/PSS", publicKey, format, data, sign, nullptr);
+            }
+            bool verifyBase64Sign(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data, const std::string_view& sign) {
+                return rsaPublicVerifyBase64Sign("SHA256withRSA/PSS", publicKey, format, data, sign, nullptr);
+            }
+
+            // 复用EVP_PKEY，减少key解析创建开销, 复用key，速度快一些
+            std::string signByEVPKey(EVP_PKEY* privateKey, const std::string_view& data) {
+                return rsaPrivateSign("SHA256withRSA/PSS", "", "", data, privateKey);
+            }
+            std::string signByEVPKeyToHex(EVP_PKEY* privateKey, const std::string_view& data) {
+                return rsaPrivateSignToHex("SHA256withRSA/PSS", "", "", data, privateKey);
+            }
+            std::string signByEVPKeyToBase64(EVP_PKEY* privateKey, const std::string_view& data) {
+                return rsaPrivateSignToBase64("SHA256withRSA/PSS", "", "", data, privateKey);
+            }
+
+            bool verifyByEVPKey(EVP_PKEY* publicKey,  const std::string_view& data, const std::string_view& sign) {
+                return rsaPublicVerify("SHA256withRSA/PSS", "", "", data, sign, publicKey);
+            }
+            bool verifyHexSignByEVPKey(EVP_PKEY* publicKey,  const std::string_view& data, const std::string_view& sign) {
+                return rsaPublicVerifyHexSign("SHA256withRSA/PSS", "", "", data, sign, publicKey);
+            }
+            bool verifyBase64SignByEVPKey(EVP_PKEY* publicKey,  const std::string_view& data, const std::string_view& sign) {
+                return rsaPublicVerifyBase64Sign("SHA256withRSA/PSS", "", "", data, sign, publicKey);
+            }
+        }
+
+
+
 
     }
 }

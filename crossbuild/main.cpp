@@ -31,6 +31,7 @@ void runAllTests() {
     testHex();
     testBase64();
     testHmac();
+    testDigest();
 }
 
 void runAllDemos() {
@@ -45,7 +46,7 @@ void runAllDemos() {
    //demoHmac();
    //demoHmacPerf();
 
-    testDigest();
+
 
 }
 
