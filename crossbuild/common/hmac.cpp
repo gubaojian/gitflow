@@ -419,6 +419,27 @@ namespace camel {
             std::string hmac_sm3ToBase64(const std::string_view& data, const std::string_view& secret) {
                 return macSignToBase64("HMAC/SM3", data, secret);
             }
+
+            std::string hmac_sha1(const std::string_view& data, const std::string_view& secret) {
+                return macSign("HMAC/SHA1", data, secret);
+            }
+            std::string hmac_sha1ToHex(const std::string_view& data, const std::string_view& secret) {
+                return macSignToHex("HMAC/SHA1", data, secret);
+            }
+
+            std::string hmac_sha1ToBase64(const std::string_view& data, const std::string_view& secret) {
+                return macSignToBase64("HMAC/SHA1", data, secret);
+            }
+
+            std::string hmac_md5(const std::string_view& data, const std::string_view& secret) {
+                return macSign("HMAC/MD5", data, secret);
+            }
+            std::string hmac_md5ToHex(const std::string_view& data, const std::string_view& secret) {
+                return macSignToHex("HMAC/MD5", data, secret);
+            }
+            std::string hmac_md5ToBase64(const std::string_view& data, const std::string_view& secret) {
+                return macSignToBase64("HMAC/MD5", data, secret);
+            }
         }
     }
 }
