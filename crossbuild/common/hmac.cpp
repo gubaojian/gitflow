@@ -3,11 +3,9 @@
 //
 
 #include "hmac.h"
-
 #include "config.h"
 #include "base64.h"
 #include "hex.h"
-
 #include <iostream>
 #include "openssl/evp.h"
 #include <openssl/err.h>
@@ -355,6 +353,10 @@ namespace camel {
             return base64_encode(sign(data));
         }
 
+        std::string MacSigner::signToBase64UrlSafe(const std::string_view &data) {
+            return base64_encode_url_safe(sign(data));
+        }
+
         bool MacSigner::checkSign(const std::string_view &data, const std::string_view &expect_sign) {
             std::string now_sign = sign(data);
             if (now_sign.empty()) {
@@ -370,6 +372,11 @@ namespace camel {
 
         bool MacSigner::checkBase64Sign(const std::string_view &data, const std::string_view &sign_data) {
             std::string sign = base64_decode(sign_data);
+            return checkSign(data, sign);
+        }
+
+        bool MacSigner::checkBase64UrlSafeSign(const std::string_view &data, const std::string_view &sign_data) {
+            std::string sign = base64_decode_url_safe(sign_data);
             return checkSign(data, sign);
         }
     }
@@ -396,6 +403,12 @@ namespace camel {
                 return macSigner.signToBase64(data);
             }
 
+            inline std::string macSignToBase64UrlSafe(const std::string& algorithm, const std::string_view& data, const std::string_view& secret) {
+                std::string secretStr(secret);
+                MacSigner macSigner(algorithm, secretStr);
+                return macSigner.signToBase64UrlSafe(data);
+            }
+
 
 
             std::string hmac_sha256(const std::string_view& data, const std::string_view& secret) {
@@ -410,6 +423,10 @@ namespace camel {
                 return macSignToBase64("HMAC/SHA2-256", data, secret);
             }
 
+            std::string hmac_sha256ToBase64UrlSafe(const std::string_view& data, const std::string_view& secret) {
+                return macSignToBase64UrlSafe("HMAC/SHA2-256", data, secret);
+            }
+
             std::string hmac_sm3(const std::string_view& data, const std::string_view& secret) {
                 return macSign("HMAC/SM3", data, secret);
             }
@@ -418,6 +435,10 @@ namespace camel {
             }
             std::string hmac_sm3ToBase64(const std::string_view& data, const std::string_view& secret) {
                 return macSignToBase64("HMAC/SM3", data, secret);
+            }
+
+            std::string hmac_sm3ToBase64UrlSafe(const std::string_view& data, const std::string_view& secret) {
+                return macSignToBase64UrlSafe("HMAC/SM3", data, secret);
             }
 
             std::string hmac_sha1(const std::string_view& data, const std::string_view& secret) {

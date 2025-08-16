@@ -346,8 +346,6 @@ namespace camel {
 
         }
 
-
-
     }
 }
 

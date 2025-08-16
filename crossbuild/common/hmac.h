@@ -57,9 +57,11 @@ namespace camel {
             std::string sign(const std::string_view& plainData);
             std::string signToHex(const std::string_view& data);
             std::string signToBase64(const std::string_view& data);
+            std::string signToBase64UrlSafe(const std::string_view& data);
             bool checkSign(const std::string_view& data, const std::string_view& sign);
             bool checkHexSign(const std::string_view& data, const std::string_view& sign);
             bool checkBase64Sign(const std::string_view& data, const std::string_view& sign);
+            bool checkBase64UrlSafeSign(const std::string_view& data, const std::string_view& sign);
         public:
             void setNonce(const std::string_view& nonce) {
                 if (nonce.empty() || nonce.size() != 16) {
@@ -83,10 +85,13 @@ namespace camel {
             std::string hmac_sha256(const std::string_view& data, const std::string_view& secret);
             std::string hmac_sha256ToHex(const std::string_view& data, const std::string_view& secret);
             std::string hmac_sha256ToBase64(const std::string_view& data, const std::string_view& secret);
+            std::string hmac_sha256ToBase64UrlSafe(const std::string_view& data, const std::string_view& secret);
 
             std::string hmac_sm3(const std::string_view& data, const std::string_view& secret);
             std::string hmac_sm3ToHex(const std::string_view& data, const std::string_view& secret);
             std::string hmac_sm3ToBase64(const std::string_view& data, const std::string_view& secret);
+            std::string hmac_sm3ToBase64UrlSafe(const std::string_view& data, const std::string_view& secret);
+
 
             std::string hmac_sha1(const std::string_view& data, const std::string_view& secret);
             std::string hmac_sha1ToHex(const std::string_view& data, const std::string_view& secret);
