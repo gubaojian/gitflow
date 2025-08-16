@@ -4,10 +4,15 @@
 
 #ifndef TEST_HMAC_H
 #define TEST_HMAC_H
+#include <string>
+
 
 
 namespace camel {
     namespace crypto {
+
+
+
         void testHmac();
     }
 }

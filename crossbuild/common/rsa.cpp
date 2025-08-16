@@ -7,6 +7,7 @@
 #include <openssl/rsa.h>
 
 #include "base64.h"
+#include "common.h"
 #include "hex.h"
 #include "openssl/core_names.h"
 
@@ -71,6 +72,21 @@ namespace camel {
             return key;
         }
 
+
+        EVP_PKEY* RSAPublicKeyFrom(const std::string& publicKey, const std::string& format) {
+            if ("hex" == format) {
+                return RSAPublicKeyFromHex(publicKey);
+            } else if ("base64" == format) {
+                return RSAPublicKeyFromBase64(publicKey);
+            } else if ("der" == format) {
+                return RSAPublicKeyFromDer(publicKey);
+            } else if ("pem" == format) {
+                return RSAPublicKeyFromPem(publicKey);
+            } else {
+                return RSAPublicKeyFromPem(publicKey);
+            }
+        }
+
         EVP_PKEY* RSAPrivateKeyFromPem(const std::string& pemKey) {
             EVP_PKEY* key = nullptr;
             BIO* bio = BIO_new_mem_buf(pemKey.data(), static_cast<int>(pemKey.size()));
@@ -128,8 +144,22 @@ namespace camel {
             return RSAPrivateKeyFromDer(hex_decode(hexKey));
         }
 
+        EVP_PKEY* RSAPrivateKeyFrom(const std::string& privateKey, const std::string& format) {
+            if ("hex" == format) {
+                return RSAPrivateKeyFromHex(privateKey);
+            } else if ("base64" == format) {
+                return RSAPrivateKeyFromBase64(privateKey);
+            } else if ("der" == format) {
+               return RSAPrivateKeyFromDer(privateKey);
+            } else if ("pem" == format) {
+               return RSAPrivateKeyFromPem(privateKey);
+            } else {
+                return RSAPrivateKeyFromPem(privateKey);
+            }
+        }
 
-        int maxRsaEncryptPlainTextSize(EVP_PKEY* pkey, const std::string& paddings) {
+
+        inline int maxRsaEncryptPlainTextSize(EVP_PKEY* pkey, const std::string& paddings) {
             if (paddings == RSA_PKCS1Padding) { //RSA_PKCS1Padding
                 return (EVP_PKEY_bits(pkey) / 8) - 11;
             }
@@ -822,24 +852,22 @@ namespace camel {
             this->paddings = paddings;
             this->format = format;
             this->publicKey = publicKey;
-            if ("hex" == format) {
-                this->pKey = RSAPublicKeyFromHex(publicKey);
-            } else if ("base64" == format) {
-                this->pKey = RSAPublicKeyFromBase64(publicKey);
-            } else if ("der" == format) {
-                this->pKey = RSAPublicKeyFromDer(publicKey);
-            } else if ("pem" == format) {
-                this->pKey = RSAPublicKeyFromPem(publicKey);
-            } else {
-                this->pKey = RSAPublicKeyFromPem(publicKey);
-            }
+            this->externalEvpKey = nullptr;
         }
 
         std::string RSAPublicKeyEncryptor::encrypt(const std::string_view &plainText) const {
-            if (pKey == nullptr || plainText.empty()) {
+            if (plainText.empty()) {
                 return "";
             }
-            EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(pKey, nullptr);
+            EVP_PKEY* evpKey = externalEvpKey;
+            if (evpKey == nullptr) {
+                evpKey = RSAPublicKeyFrom(publicKey, format);
+            }
+            if (evpKey == nullptr) {
+                return "";
+            }
+            EvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
+            EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(evpKey, nullptr);
             if (ctx == nullptr) {
                 std::cerr << "RSAPublicKeyEncryptor::encrypt() Failed to create EVP_PKEY_CTX_new " << std::endl;
                 printOpenSSLError();
@@ -854,7 +882,7 @@ namespace camel {
             std::string buffer;
             int bigBufferSize = plainText.size()*2;
             buffer.resize(std::max(bigBufferSize, 2048));
-            int maxSplitLen = maxRsaEncryptPlainTextSize(pKey, paddings);// max block size
+            int maxSplitLen = maxRsaEncryptPlainTextSize(evpKey, paddings);// max block size
             size_t totalLength = 0;
             unsigned char *in = (unsigned char *)plainText.data();
             unsigned char *out = (unsigned char*) buffer.data();
@@ -900,25 +928,26 @@ namespace camel {
                   const std::string& paddings) {
             this->paddings = paddings;
             this->format = format;
-            this->privateKey =privateKey;
-            if ("hex" == format) {
-                this->pKey = RSAPrivateKeyFromHex(privateKey);
-            } else if ("base64" == format) {
-                this->pKey = RSAPrivateKeyFromBase64(privateKey);
-            } else if ("der" == format) {
-                this->pKey = RSAPrivateKeyFromDer(privateKey);
-            } else if ("pem" == format) {
-                this->pKey = RSAPrivateKeyFromPem(privateKey);
-            } else {
-                this->pKey = RSAPrivateKeyFromPem(privateKey);
-            }
+            this->privateKey = privateKey;
+            this->externalEvpKey = nullptr;
         }
 
-        std::string RSAPrivateKeyDecryptor::decrypt(const std::string_view &encryptedData) const {
-            if (pKey == nullptr || encryptedData.empty()) {
+        std::string RSAPrivateKeyDecryptor::decrypt(const std::string_view &encryptedData) {
+            if (encryptedData.empty()) {
                 return "";
             }
-            EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(pKey, nullptr);
+
+            EVP_PKEY* evpKey = externalEvpKey;
+            if (evpKey == nullptr) {
+                evpKey = RSAPrivateKeyFrom(privateKey, format);
+            }
+            if (evpKey == nullptr) {
+                return "";
+            }
+            EvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
+
+            EVP_PKEY_CTX * ctx = EVP_PKEY_CTX_new(evpKey, nullptr);
+
             if (ctx == nullptr) {
                 std::cerr << "RSAPrivateKeyDecryptor::decrypt() Failed to create EVP_PKEY_CTX_new " << std::endl;
                 printOpenSSLError();
@@ -933,7 +962,7 @@ namespace camel {
             std::string buffer;
             int bigBufferSize = encryptedData.size();
             buffer.resize(std::max(bigBufferSize, 1024));
-            int rsaBlockSize = rsaEncryptBlockSize(pKey, paddings);// max block size
+            int rsaBlockSize = rsaEncryptBlockSize(evpKey, paddings);// max block size
             if (encryptedData.length() % rsaBlockSize != 0) {
                 std::cerr << "RSAPrivateKeyDecryptor::decrypt() invalid rsa encrypt data " << std::endl;
                 return "";
@@ -962,12 +991,12 @@ namespace camel {
             return buffer;
         }
 
-        std::string RSAPrivateKeyDecryptor::decryptFromHex(const std::string_view &encryptedText) const {
+        std::string RSAPrivateKeyDecryptor::decryptFromHex(const std::string_view &encryptedText){
             std::string data = hex_decode(encryptedText);
             return decrypt(data);
         }
 
-        std::string RSAPrivateKeyDecryptor::decryptFromBase64(const std::string_view &encryptedText) const {
+        std::string RSAPrivateKeyDecryptor::decryptFromBase64(const std::string_view &encryptedText) {
             std::string data = base64_decode_url_safe(encryptedText);
             return decrypt(data);
         }
@@ -984,25 +1013,24 @@ namespace camel {
                   const std::string& algorithm) {
             this->algorithm = algorithm;
             this->format = format;
-            this->privateKey =privateKey;
-            if ("hex" == format) {
-                this->pKey = RSAPrivateKeyFromHex(privateKey);
-            } else if ("base64" == format) {
-                this->pKey = RSAPrivateKeyFromBase64(privateKey);
-            } else if ("der" == format) {
-                this->pKey = RSAPrivateKeyFromDer(privateKey);
-            } else if ("pem" == format) {
-                this->pKey = RSAPrivateKeyFromPem(privateKey);
-            } else {
-                this->pKey = RSAPrivateKeyFromPem(privateKey);
-            }
+            this->privateKey = privateKey;
+            this->externalEvpKey = nullptr;
         }
 
 
         std::string RSAPrivateKeySigner::sign(const std::string_view &plainText) const {
-            if (pKey == nullptr || plainText.empty()) {
+            if (plainText.empty()) {
                 return "";
             }
+
+            EVP_PKEY* evpKey = externalEvpKey;
+            if (evpKey == nullptr) {
+                evpKey = RSAPrivateKeyFrom(privateKey, format);
+            }
+            if (evpKey == nullptr) {
+                return "";
+            }
+            EvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
 
             EVP_MD_CTX* ctx = EVP_MD_CTX_new();
             if (ctx == nullptr) {
@@ -1010,7 +1038,7 @@ namespace camel {
                 printOpenSSLError();
                 return "";
             }
-            if (!configSignParams(ctx, pKey, algorithm)) {
+            if (!configSignParams(ctx, evpKey, algorithm)) {
                 EVP_MD_CTX_free(ctx);
                 return "";
             }
@@ -1022,7 +1050,7 @@ namespace camel {
             }
 
             std::string buffer;
-            buffer.resize(rsaMaxSignSize(pKey));
+            buffer.resize(rsaMaxSignSize(evpKey));
             unsigned char *out = (unsigned char*) buffer.data();
             size_t outlen =  buffer.size();
             if (EVP_DigestSignFinal(ctx, out, &outlen) == 0) {
@@ -1057,26 +1085,23 @@ namespace camel {
             this->algorithm = algorithm;
             this->format = format;
             this->publicKey = publicKey;
-            if ("hex" == format) {
-                this->pKey = RSAPublicKeyFromHex(publicKey);
-            } else if ("base64" == format) {
-                this->pKey = RSAPublicKeyFromBase64(publicKey);
-            } else if ("der" == format) {
-                this->pKey = RSAPublicKeyFromDer(publicKey);
-            } else if ("pem" == format) {
-                this->pKey = RSAPublicKeyFromPem(publicKey);
-            } else {
-                this->pKey = RSAPublicKeyFromPem(publicKey);
-            }
         }
 
 
         bool RSAPublicKeyVerifier::verifySign(const std::string_view &sign, const std::string_view &data) const {
-            if (pKey == nullptr
-                || sign.empty()
+            if (sign.empty()
                 || data.empty()) {
                 return false;
             }
+
+            EVP_PKEY* evpKey = externalEvpKey;
+            if (evpKey == nullptr) {
+                evpKey = RSAPublicKeyFrom(publicKey, format);
+            }
+            if (evpKey == nullptr) {
+                return "";
+            }
+            EvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
 
             EVP_MD_CTX* ctx = EVP_MD_CTX_new();
             if (ctx == nullptr) {
@@ -1084,7 +1109,7 @@ namespace camel {
                 printOpenSSLError();
                 return "";
             }
-            if (!configVerifyParams(ctx, pKey, algorithm)) {
+            if (!configVerifyParams(ctx, evpKey, algorithm)) {
                 EVP_MD_CTX_free(ctx);
                 return "";
             }

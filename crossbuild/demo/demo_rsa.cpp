@@ -82,6 +82,7 @@ namespace camel {
             RSAPublicKeyEncryptor encryptor(rsa.getPemPublicKey());
             RSAPrivateKeyDecryptor decryptor(rsa.getPemPrivateKey());
             int test_count = 5000;
+            encryptor.setExternalEvpKey(RSAPublicKeyFrom(rsa.getPemPublicKey(), "pem"));
             {
                 auto start = std::chrono::high_resolution_clock::now();
                 auto end = std::chrono::high_resolution_clock::now();
@@ -151,6 +152,8 @@ namespace camel {
                 end = std::chrono::high_resolution_clock::now();
                 used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 std::cout << "rsa decrypt times per second " << ( (double)test_count)/(used.count()/1000.0f) << std::endl;
+
+
             }
 
             {
@@ -180,12 +183,37 @@ namespace camel {
                 std::string plainText = "hello world";
                 std::string encryptedText = encryptor.encryptToBase64(plainText);
                 int test_count = 5000;
+                std::string rsaKey = rsa.getPrivateKey();
                 for(int i=0; i<test_count; i++) {
-                    decryptor.decryptFromBase64(encryptedText);
+                    RSAPrivateKeyDecryptor decryptor2(rsa.getPrivateKey(), "der");
+                    decryptor2.decryptFromBase64(encryptedText);
                 }
                 end = std::chrono::high_resolution_clock::now();
                 used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 std::cout << "rsa decrypt base64 times per second " << ( (double)test_count)/(used.count()/1000.0f) << std::endl;
+
+            }
+
+            {
+                auto start = std::chrono::high_resolution_clock::now();
+                auto end = std::chrono::high_resolution_clock::now();
+                auto used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+                start = std::chrono::high_resolution_clock::now();
+                std::string plainText = "hello world";
+                std::string encryptedText = encryptor.encryptToBase64(plainText);
+                int test_count = 5000;
+                std::string rsaKey = rsa.getPrivateKey();
+                EVP_PKEY* pkey = RSAPrivateKeyFromDer(rsa.getPrivateKey());
+                for(int i=0; i<test_count; i++) {
+                    RSAPrivateKeyDecryptor decryptor2("", "der");
+                    decryptor2.setExternalEvpKey( pkey);
+                    decryptor2.decryptFromBase64(encryptedText);
+                }
+                EVP_PKEY_free(pkey);
+                end = std::chrono::high_resolution_clock::now();
+                used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                std::cout << "rsa decrypt setExternalEvpKey base64 times per second " << ( (double)test_count)/(used.count()/1000.0f) << std::endl;
 
             }
         }

@@ -8,13 +8,14 @@
 
 #include "../common/hex.h"
 #include "../common/hmac.h"
+#include "../test/hmac_sha_256_signer.h"
 
 namespace camel {
     namespace crypto {
 
         void demoHmac() {
             HMACSha2_256Signer signer("hello world");
-            HMACSha2_256FastSigner fastSigner("hello world");
+            MacSigner fastSigner("SHA2-256", "hello world");
             std::string result = "ti+NvaQtWG3u4+iNv/7MWgR48gACs+bWZ8iTUAUpJwQ=";
             std::string data = "test sign";
             std::cout << signer.signToBase64(data) << std::endl;
@@ -23,8 +24,8 @@ namespace camel {
         }
 
         void demoHmacSignPerf() {
- HMACSha2_256Signer signer("hello world");
-            HMACSha2_256FastSigner fastSigner("hello world");
+            HMACSha2_256Signer signer("hello world");
+            MacSigner fastSigner("BLAKE2BMAC/MD5", "hello world");
             std::string text_sign_data = "test signtest signtest signtest signtest signtest sign";
             int test_count = 10000*100;
             {
@@ -115,7 +116,7 @@ namespace camel {
 
         void demoHmacCheckSignPerf() {
             HMACSha2_256Signer signer("hello world");
-            HMACSha2_256FastSigner fastSigner("hello world");
+            MacSigner fastSigner("SHA1", "hello world");
             std::string text_sign_data = "test signtest signtest signtest signtest signtest sign";
             std::string sign =  signer.sign(text_sign_data);
             std::string signHex =  signer.signToHex(text_sign_data);

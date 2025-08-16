@@ -15,5 +15,6 @@ void decodeHexLUT4(uint8_t* __restrict__ dest, const uint8_t* __restrict__ src, 
 
 // Scalar version. len is number of src bytes. dest must be twice the size of src.
 void encodeHex(uint8_t* __restrict__ dest, const uint8_t* __restrict__ src, size_t len);
+void encodeHexLower(uint8_t* __restrict__ dest, const uint8_t* __restrict__ src, size_t len);
 
 #endif //FAST_HEX_H

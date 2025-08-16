@@ -43,6 +43,8 @@ add_executable(crossbuild main.cpp
         common/hex.h
         common/base64.cpp
         common/base64.h
+        common/common.cpp
+        common/common.h
         common/aes.cpp    
         common/aes.h
         common/rsa.cpp
@@ -59,15 +61,19 @@ add_executable(crossbuild main.cpp
         test/test_rsa.h
         test/test_hmac.cpp
         test/test_hmac.h
+        test/test_digest.cpp
+        test/test_digest.h
         demo/demo_rsa.cpp
         demo/demo_rsa.h
         demo/demo.h
         demo/demo_hmac.cpp
         demo/demo_hmac.h
-        common/digest_util.cpp
-        common/digest_util.h
+        common/digest.cpp
+        common/digest.h
         demo/demo_aes.cpp
         demo/demo_aes.h
+        test/hmac_sha_256_signer.cpp
+        test/hmac_sha_256_signer.h
 )
 
 target_link_libraries(crossbuild
@@ -79,7 +85,6 @@ target_link_libraries(crossbuild
 set(ENCRYPT_SOURCE
     common/Encrypt.cpp
     common/Encrypt.h
-
 )
 
 set(JNI_SOURCE
@@ -100,6 +105,8 @@ set(JNI_SOURCE
     common/fast_hex.h
     common/aes.cpp
     common/aes.h
+        common/common.cpp
+        common/common.h
 )
 
 add_library(encrypt SHARED

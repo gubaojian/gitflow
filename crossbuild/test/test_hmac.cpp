@@ -6,15 +6,19 @@
 
 #include <iostream>
 
+#include "hmac_sha_256_signer.h"
 #include "../common/base64.h"
 #include "../common/hex.h"
 #include "../common/hmac.h"
+
+
+
 
 namespace camel {
     namespace crypto {
         void testHmac() {
             HMACSha2_256Signer signer("hello world");
-            HMACSha2_256Signer fastSigner("hello world");
+            MacSigner macSigner("HMAC/SHA2-256", "hello world");
             std::string data = "test sign";
             std::string result = "ti+NvaQtWG3u4+iNv/7MWgR48gACs+bWZ8iTUAUpJwQ=";
             std::string result_plain = base64_decode(result);
@@ -31,9 +35,9 @@ namespace camel {
             }
 
             {
-                passed = passed && (fastSigner.checkBase64Sign(data, signer.signToBase64(data)));
-                passed = passed && (fastSigner.checkHexSign(data, signer.signToHex(data)));
-                passed = passed && (fastSigner.checkSign(data, signer.sign(data)));
+                passed = passed && (macSigner.checkBase64Sign(data, signer.signToBase64(data)));
+                passed = passed && (macSigner.checkHexSign(data, signer.signToHex(data)));
+                passed = passed && (macSigner.checkSign(data, signer.sign(data)));
             }
             if (passed) {
                 std::cout << "HMACSha2_256Signer testHmac() passed " << std::endl;

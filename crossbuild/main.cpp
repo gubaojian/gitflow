@@ -17,6 +17,7 @@
 #include <fstream>
 #include <stdexcept>
 #include "demo/demo_hmac.h"
+#include "test/test_digest.h"
 #include "test/test_hmac.h"
 #include "test/test_rsa.h"
 
@@ -36,13 +37,16 @@ void runAllDemos() {
    demoRsaGenerateKey();
    demoRsaEncrypt();
    demoRsaSign();
+   demoAesGenerateKey();
+   demoAesEncrypt();
     //demoWithJava();
    //demoRsaCryptPerf();
    //demoRsaDecryptPerf();
    //demoHmac();
    //demoHmacPerf();
-    demoAesGenerateKey();
-    demoAesEncrypt();
+
+    testDigest();
+
 }
 
 /**

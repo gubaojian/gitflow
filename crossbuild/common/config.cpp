@@ -36,6 +36,21 @@ namespace camel{
         _hasOpenSslInit = false;
       }
     }
+
+    OSSL_LIB_CTX *getOSSL_LIB_CTX() {
+      return nullptr;
+    }
+
+    bool fast_cmp_equals(std::string_view now_sign, std::string_view expect_sign) {
+      if (now_sign.length() != expect_sign.size()) {
+        return false;
+      }
+      // none need use CRYPTO_memcmp, just fast compare is ok.
+      if (CHECK_SIGN_USE_CRYPTO_MEMCMP) {
+        return CRYPTO_memcmp(now_sign.data(), expect_sign.data(), now_sign.size()) == 0;
+      }
+      return std::memcmp(now_sign.data(), expect_sign.data(), now_sign.size()) == 0;
+    }
   }
 }
 

@@ -9,15 +9,16 @@
 
 
 /**
-static const char hex_table[16] = {
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-  }; */
+ */
 
 //默认大写
-static const char hex_table[16] = {
+static const char hex_table_upper[16] = {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
 };
-inline static char hex(uint8_t value) { return hex_table[value]; }
+
+static const char hex_table_lower[16] = {
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+};
 
 // ASCII -> hex value
 static const uint8_t unhex_table[256] = {
@@ -119,12 +120,21 @@ void decodeHexLUT4(uint8_t* __restrict__ dest, const uint8_t* __restrict__ src, 
     }
 }
 
-void encodeHex(uint8_t* __restrict__ dest, const uint8_t* __restrict__ src, size_t len) {
+
+void encodeHex(uint8_t* __restrict__ dest, const uint8_t* __restrict__ src, size_t len, const char* hex_table) {
     for (size_t i = 0; i < len; i++) {
         uint8_t a = src[i];
         uint8_t lo = a & 0b1111;
         uint8_t hi = a >> 4;
-        *dest++ = hex(hi);
-        *dest++ = hex(lo);
+        *dest++ = hex_table[hi];
+        *dest++ = hex_table[lo];
     }
+}
+
+void encodeHex(uint8_t* __restrict__ dest, const uint8_t* __restrict__ src, size_t len) {
+    return encodeHex(dest, src, len, hex_table_upper);
+}
+
+void encodeHexLower(uint8_t* __restrict__ dest, const uint8_t* __restrict__ src, size_t len) {
+    return encodeHex(dest, src, len, hex_table_lower);
 }

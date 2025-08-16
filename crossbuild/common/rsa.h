@@ -20,18 +20,19 @@ namespace camel {
         EVP_PKEY* RSAPublicKeyFromHex(const std::string& hexKey);
         EVP_PKEY* RSAPublicKeyFromDer(const std::string& derKey);
         EVP_PKEY* RSAPublicKeyFromDerByBio(const std::string& derKey);
+        EVP_PKEY* RSAPublicKeyFrom(const std::string& publicKey, const std::string& format);
 
         EVP_PKEY* RSAPrivateKeyFromPem(const std::string& pemKey);
         EVP_PKEY* RSAPrivateKeyFromBase64(const std::string& base64Key);
         EVP_PKEY* RSAPrivateKeyFromHex(const std::string& hexKey);
         EVP_PKEY* RSAPrivateKeyFromDer(const std::string& derKey);
         EVP_PKEY* RSAPrivateKeyFromDerByBio(const std::string& derKey);
-
+        EVP_PKEY* RSAPrivateKeyFrom(const std::string& privateKey, const std::string& format);
 
 
         class RSAKeyPairGenerator {
             public:
-                explicit RSAKeyPairGenerator(int keyLength=2048);
+                explicit RSAKeyPairGenerator(int keyLength=2048); //1024 2048 4096
                 ~RSAKeyPairGenerator();
             public:
                 std::string getPublicKey();
@@ -53,6 +54,8 @@ namespace camel {
             EVP_PKEY_CTX* ctx = nullptr;
             EVP_PKEY* pkey = nullptr;
         };
+
+
 
         constexpr auto  RSA_PKCS1Padding = "PKCS1Padding";
         constexpr auto  RSA_OAEPPadding = "OAEPPadding";
@@ -78,25 +81,28 @@ namespace camel {
                     const std::string& format = "pem",
                     const std::string& paddings= RSA_PKCS1Padding);
 
-               ~RSAPublicKeyEncryptor() {
-                   if (pKey != nullptr) {
-                       EVP_PKEY_free(pKey);
-                       pKey = nullptr;
-                   }
-               }
-
-               RSAPublicKeyEncryptor(const RSAPublicKeyEncryptor&) = delete;
-               RSAPublicKeyEncryptor& operator=(const RSAPublicKeyEncryptor&) = delete;
+               ~RSAPublicKeyEncryptor() = default;
 
             public:
                std::string encrypt(const std::string_view& plainText) const;
                std::string encryptToBase64(const std::string_view& plainText) const;
                std::string encryptToHex(const std::string_view& plainText) const;
+            public:
+                /**
+                 * 外部提供的EVP_PKEY指针，如果指定则不再加载默认秘钥.不指定则，加载默认秘钥
+                 *  外部自己负责释放，管理EVP_PKEY生命周期，用于复用EVP_PKEY秘钥，避免重复加载，高性能等场景。
+                 *  有效提升加密性能，可多个Encryptor通setExternalEvpKey设置相同共用，显著提升性能。
+                 * @param pkey
+                 */
+                void setExternalEvpKey(EVP_PKEY* pkey) {
+                    this->externalEvpKey = pkey;
+                }
             private:
-              EVP_PKEY* pKey = nullptr;
               std::string publicKey;
               std::string format;
               std::string paddings;
+           private:
+               EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
         };
 
         class RSAPrivateKeyDecryptor {
@@ -111,24 +117,29 @@ namespace camel {
             explicit RSAPrivateKeyDecryptor(const std::string& privateKey,
                   const std::string& format = "pem",
                   const std::string& paddings = RSA_PKCS1Padding);
-            ~RSAPrivateKeyDecryptor() {
-                if (pKey != nullptr) {
-                    EVP_PKEY_free(pKey);
-                    pKey = nullptr;
-                }
-            }
+            ~RSAPrivateKeyDecryptor() = default;
         public:
             RSAPrivateKeyDecryptor(const RSAPrivateKeyDecryptor&) = delete;
             RSAPrivateKeyDecryptor& operator=(const RSAPrivateKeyDecryptor&) = delete;
         public:
-            std::string decrypt(const std::string_view& encryptedData) const;
-            std::string decryptFromBase64(const std::string_view& base64EncryptedText) const;
-            std::string decryptFromHex(const std::string_view& hexEncryptedText) const;
+            std::string decrypt(const std::string_view& encryptedData);
+            std::string decryptFromBase64(const std::string_view& base64EncryptedText);
+            std::string decryptFromHex(const std::string_view& hexEncryptedText);
+        public:
+            /**
+             * 外部提供的EVP_PKEY指针，如果指定则不再加载默认秘钥.不指定则，加载默认秘钥
+             *  外部自己负责释放，管理EVP_PKEY生命周期，用于复用EVP_PKEY秘钥，避免重复加载，高性能等场景
+             * @param pkey
+             */
+            void setExternalEvpKey(EVP_PKEY* pkey) {
+                this->externalEvpKey = pkey;
+            }
         private:
-            EVP_PKEY* pKey = nullptr;
             std::string privateKey;
             std::string format;
             std::string paddings;
+        private:
+            EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
         };
 
 
@@ -145,12 +156,7 @@ namespace camel {
             explicit RSAPrivateKeySigner(const std::string& publicKey,
                   const std::string& format = "pem",
                   const std::string& algorithm = "SHA256withRSA");
-            ~RSAPrivateKeySigner() {
-                if (pKey != nullptr) {
-                    EVP_PKEY_free(pKey);
-                    pKey = nullptr;
-                }
-            }
+            ~RSAPrivateKeySigner() = default;
         public:
             RSAPrivateKeySigner(const RSAPrivateKeySigner&) = delete;
             RSAPrivateKeySigner& operator=(const RSAPrivateKeySigner&) = delete;
@@ -158,11 +164,21 @@ namespace camel {
             std::string sign(const std::string_view& plainText) const;
             std::string signToBase64(const std::string_view& plainText) const;
             std::string signToHex(const std::string_view& plainText) const;
+        public:
+            /**
+             * 外部提供的EVP_PKEY指针，如果指定则不再加载默认秘钥.不指定则，加载默认秘钥
+             *  外部自己负责释放，管理EVP_PKEY生命周期，用于复用EVP_PKEY秘钥，避免重复加载，高性能等场景
+             * @param pkey
+             */
+            void setExternalEvpKey(EVP_PKEY* pkey) {
+                this->externalEvpKey = pkey;
+            }
         private:
-            EVP_PKEY* pKey = nullptr;
             std::string privateKey;
             std::string format;
             std::string algorithm;
+        private:
+            EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
         };
 
         class RSAPublicKeyVerifier{
@@ -178,25 +194,69 @@ namespace camel {
             explicit RSAPublicKeyVerifier(const std::string& publicKey,
                   const std::string& format = "pem",
                   const std::string& algorithm = "SHA256withRSA");
-            ~RSAPublicKeyVerifier() {
-                if (pKey != nullptr) {
-                    EVP_PKEY_free(pKey);
-                    pKey = nullptr;
-                }
-            }
+            ~RSAPublicKeyVerifier() = default;
         public:
              bool verifySign(const std::string_view& sign, const std::string_view& data) const;
              bool verifyHexSign(const std::string_view& hexSign, const std::string_view& data) const;
              bool verifyBase64Sign(const std::string_view& base64Sign, const std::string_view& data) const;
+        public:
+            /**
+             * 外部提供的EVP_PKEY指针，如果指定则不再加载默认秘钥.不指定则，加载默认秘钥
+             *  外部自己负责释放，管理EVP_PKEY生命周期，用于复用EVP_PKEY秘钥，避免重复加载，高性能等场景
+             * @param pkey
+             */
+            void setExternalEvpKey(EVP_PKEY* pkey) {
+                this->externalEvpKey = pkey;
+            }
         private:
-            EVP_PKEY* pKey = nullptr;
             std::string publicKey;
             std::string format;
             std::string algorithm;
+        private:
+            EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
         };
 
 
 
+        class EvpKeyGuard {
+        public:
+            explicit EvpKeyGuard(EVP_PKEY* evpKey, bool needFree) {
+                this->evpKey = evpKey;
+                this->needFree = needFree;
+            }
+            ~EvpKeyGuard() {
+                if (needFree) {
+                    if (evpKey != nullptr) {
+                        EVP_PKEY_free(evpKey);
+                        evpKey = nullptr;
+                    }
+                }
+            }
+        public:
+            EvpKeyGuard(EvpKeyGuard const&)            = delete;
+            EvpKeyGuard& operator=(EvpKeyGuard const&) = delete;
+        private:
+            EVP_PKEY* evpKey;
+            bool  needFree;
+        };
+
+        class EvpKeyCtxGuard {
+        public:
+            explicit EvpKeyCtxGuard(EVP_PKEY_CTX* ctx) {
+                this->ctx = ctx;
+            }
+            ~EvpKeyCtxGuard() {
+                if (ctx != nullptr) {
+                    EVP_PKEY_CTX_free(ctx);
+                    ctx = nullptr;
+                }
+            }
+        public:
+            EvpKeyCtxGuard(EvpKeyCtxGuard const&)            = delete;
+            EvpKeyCtxGuard& operator=(EvpKeyCtxGuard const&) = delete;
+        private:
+            EVP_PKEY_CTX* ctx;
+        };
 
 
 

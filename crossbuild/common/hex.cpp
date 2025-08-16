@@ -27,11 +27,11 @@ namespace camel {
             BN_free(bn);
             return result;
         }
-        //static constexpr char kEncoding[] = "0123456789abcdef";
+        static constexpr char kEncodingLower[] = "0123456789abcdef";
 
-        static constexpr char kEncoding[] = "0123456789ABCDEF";
+        static constexpr char kEncodingUpper[] = "0123456789ABCDEF";
 
-        inline std::string hex_encode_by_block(const std::string_view& input) {
+        inline std::string hex_encode_by_block(const std::string_view& input, const char* kEncoding) {
             const size_t input_len = input.size();
             if (input_len == 0) {
                 return "";
@@ -104,11 +104,15 @@ namespace camel {
 
 
         std::string hex_encode(const std::string &input) {
-            return hex_encode_by_block(input);
+            return hex_encode_by_block(input, kEncodingUpper);
         }
 
         std::string hex_encode(const std::string_view &input) {
-            return hex_encode_by_block(input);
+            return hex_encode_by_block(input, kEncodingUpper);
+        }
+
+        std::string hex_encode_lower(const std::string_view &input) {
+            return hex_encode_by_block(input, kEncodingLower);
         }
 
         std::string hex_decode(const std::string &input) {
