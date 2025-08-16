@@ -201,12 +201,13 @@ namespace camel {
 
 namespace camel {
     namespace crypto {
-        MacSigner::MacSigner(const std::string &algorithm, const std::string &secret) {
+        MacSigner::MacSigner(const std::string &algorithm, const std::string_view &secret) {
             this->algorithm = algorithm;
             this->secret = secret;
             this->macName = getMacName(algorithm);
             this->hashName = getMacHashName(algorithm);
         }
+
 
         /**
         * 原生带密钥哈希 MAC	BLAKE2SMAC、BLAKE2BMAC	不需要（内置哈希逻辑）
@@ -379,8 +380,7 @@ namespace camel {
         namespace DigestUtils {
 
             inline std::string macSign(const std::string& algorithm, const std::string_view& data, const std::string_view& secret) {
-                std::string secretStr(secret);
-                MacSigner macSigner(algorithm, secretStr);
+                MacSigner macSigner(algorithm, secret);
                 return macSigner.sign(data);
             }
 
@@ -408,6 +408,16 @@ namespace camel {
 
             std::string hmac_sha256ToBase64(const std::string_view& data, const std::string_view& secret) {
                 return macSignToBase64("HMAC/SHA2-256", data, secret);
+            }
+
+            std::string hmac_sm3(const std::string_view& data, const std::string_view& secret) {
+                return macSign("HMAC/SM3", data, secret);
+            }
+            std::string hmac_sm3ToHex(const std::string_view& data, const std::string_view& secret) {
+                return macSignToHex("HMAC/SM3", data, secret);
+            }
+            std::string hmac_sm3ToBase64(const std::string_view& data, const std::string_view& secret) {
+                return macSignToBase64("HMAC/SM3", data, secret);
             }
         }
     }

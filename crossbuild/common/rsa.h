@@ -216,47 +216,27 @@ namespace camel {
             EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
         };
 
+        // PKCS1Padding
+        namespace RSAPKCS1V15PaddingUtil {
+            std::string encrypt(const std::string_view& publicKey,  const std::string_view& format, const std::string_view& data);
+            std::string decrypt(const std::string_view& privateKey,const std::string_view& format,  const std::string_view& data);
 
+            /**
+             * 复用EVP_PKEY，减少key解析创建开销, 比上面快
+             * @param publicKey
+             * @param format
+             * @param data
+             * @return
+             */
+            std::string encryptByEvpKey(EVP_PKEY* publicKey, const std::string_view& data);
+            std::string decryptByEvpKey(EVP_PKEY* privateKey,  const std::string_view& data);
+        }
 
-        class EvpKeyGuard {
-        public:
-            explicit EvpKeyGuard(EVP_PKEY* evpKey, bool needFree) {
-                this->evpKey = evpKey;
-                this->needFree = needFree;
-            }
-            ~EvpKeyGuard() {
-                if (needFree) {
-                    if (evpKey != nullptr) {
-                        EVP_PKEY_free(evpKey);
-                        evpKey = nullptr;
-                    }
-                }
-            }
-        public:
-            EvpKeyGuard(EvpKeyGuard const&)            = delete;
-            EvpKeyGuard& operator=(EvpKeyGuard const&) = delete;
-        private:
-            EVP_PKEY* evpKey;
-            bool  needFree;
-        };
-
-        class EvpKeyCtxGuard {
-        public:
-            explicit EvpKeyCtxGuard(EVP_PKEY_CTX* ctx) {
-                this->ctx = ctx;
-            }
-            ~EvpKeyCtxGuard() {
-                if (ctx != nullptr) {
-                    EVP_PKEY_CTX_free(ctx);
-                    ctx = nullptr;
-                }
-            }
-        public:
-            EvpKeyCtxGuard(EvpKeyCtxGuard const&)            = delete;
-            EvpKeyCtxGuard& operator=(EvpKeyCtxGuard const&) = delete;
-        private:
-            EVP_PKEY_CTX* ctx;
-        };
+        //RSA_OAEPwithSHA_256andMGF1Padding
+        namespace RSAOAEPSha256PaddingUtil {
+            std::string encrypt(const std::string_view& publicKey, const std::string_view& data);
+            std::string decrypt(const std::string_view& privateKey, const std::string_view& data);
+        }
 
 
 

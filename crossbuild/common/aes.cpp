@@ -58,6 +58,18 @@ namespace camel {
         std::string genBase64ivKey(int keyBitLength) {
             return base64_encode(genSivKey(keyBitLength));
         }
+
+        std::string getAESKey(const std::string_view& secret, const std::string_view& format) {
+            if (format == "base64") {
+                return base64_decode(secret);
+            } else if (format == "hex") {
+                return hex_decode(secret);
+            }  else if (format == "binary" || format == "raw") {
+                return std::string(secret);
+            } else {
+                return std::string(secret);
+            }
+        }
     }
 }
 
@@ -821,17 +833,9 @@ namespace camel {
 
 namespace camel {
     namespace crypto {
-        AESEncryptor::AESEncryptor(const std::string& algorithm, const std::string& secret, const std::string& format) {
+        AESEncryptor::AESEncryptor(const std::string& algorithm, const std::string_view& secret, const std::string& format) {
             this->algorithm = algorithm;
-            if (format == "base64") {
-                this->secretKey = base64_decode(secret);
-            } else if (format == "hex") {
-                this->secretKey = hex_decode(secret);
-            }  else if (format == "binary" || format == "raw") {
-                this->secretKey = secret;
-            } else {
-                this->secretKey = secret;
-            }
+            this->secretKey = getAESKey(secret, format);
         }
 
         std::string AESEncryptor::encrypt(const std::string_view &plainText) const {
@@ -915,17 +919,9 @@ namespace camel {
 
 namespace camel {
     namespace crypto {
-        AESDecryptor::AESDecryptor(const std::string &algorithm, const std::string &secret, const std::string &format) {
+        AESDecryptor::AESDecryptor(const std::string &algorithm, const std::string_view &secret, const std::string &format) {
             this->algorithm = algorithm;
-            if (format == "base64") {
-                this->secretKey = base64_decode(secret);
-            } else if (format == "hex") {
-                this->secretKey = hex_decode(secret);
-            }  else if (format == "binary" || format == "raw") {
-                this->secretKey = secret;
-            } else {
-                this->secretKey = secret;
-            }
+            this->secretKey = getAESKey(secret, format);
         }
 
         /**
@@ -1018,8 +1014,232 @@ namespace camel {
             return decryptWithAAD(base64_decode(encryptedData), aad);
         }
 
+    }
+}
+
+namespace camel {
+    namespace crypto {
+        inline std::string aesEncrypt(const std::string& algorithm,
+            const std::string_view& aesKey,
+            const std::string_view& data) {
+            if (isAESKeyBitLenNotValid(aesKey.size()*8)) {
+                std::cerr << "aes secretKey size invalid" << algorithm << std::endl;
+                return "";
+            }
+            AESEncryptor aesEncryptor(algorithm, aesKey, "raw");
+            return aesEncryptor.encrypt(data);
+        }
+
+        inline std::string aesEncryptToHex(const std::string& algorithm,
+          const std::string_view& aesKey,
+          const std::string_view& data) {
+            if (isAESKeyBitLenNotValid(aesKey.size()*8)) {
+                std::cerr << "aes secretKey size invalid" << algorithm << std::endl;
+                return "";
+            }
+            AESEncryptor aesEncryptor(algorithm, aesKey, "raw");
+            return aesEncryptor.encryptToHex(data);
+        }
+
+        inline std::string aesEncryptToBase64(const std::string& algorithm,
+             const std::string_view& aesKey,
+             const std::string_view& data) {
+            if (isAESKeyBitLenNotValid(aesKey.size()*8)) {
+                std::cerr << "aes secretKey size invalid" << algorithm << std::endl;
+                return "";
+            }
+            AESEncryptor aesEncryptor(algorithm, aesKey, "raw");
+            return aesEncryptor.encryptToBase64(data);
+        }
+
+        inline std::string aesDecrypt(const std::string& algorithm,
+        const std::string_view& aesKey,
+        const std::string_view& data) {
+            if (isAESKeyBitLenNotValid(aesKey.size()*8)) {
+                std::cerr << "aes secretKey size invalid" << algorithm << std::endl;
+                return "";
+            }
+            AESDecryptor aesDecryptor(algorithm, aesKey, "raw");
+            return aesDecryptor.decrypt(data);
+        }
+
+        inline std::string aesDecryptFromHex(const std::string& algorithm,
+          const std::string_view& aesKey,
+          const std::string_view& data) {
+            if (isAESKeyBitLenNotValid(aesKey.size()*8)) {
+                std::cerr << "aes secretKey size invalid" << algorithm << std::endl;
+                return "";
+            }
+            AESDecryptor aesDecryptor(algorithm, aesKey, "raw");
+            return aesDecryptor.decryptFromHex(data);
+        }
+
+        inline std::string aesDecryptFromBase64(const std::string& algorithm,
+             const std::string_view& aesKey,
+             const std::string_view& data) {
+            if (isAESKeyBitLenNotValid(aesKey.size()*8)) {
+                std::cerr << "aes secretKey size invalid" << algorithm << std::endl;
+                return "";
+            }
+            AESDecryptor aesDecryptor(algorithm, aesKey, "raw");
+            return aesDecryptor.decryptFromBase64(data);
+        }
+
+        inline std::string aesEncryptWithAAD(const std::string& algorithm,
+            const std::string_view& aesKey,
+            const std::string_view& data,
+             const std::string_view &aad) {
+            if (isAESKeyBitLenNotValid(aesKey.size()*8)) {
+                std::cerr << "aes secretKey size invalid" << algorithm << std::endl;
+                return "";
+            }
+            AESEncryptor aesEncryptor(algorithm, aesKey, "raw");
+            return aesEncryptor.encryptWithAAD(data, aad);
+        }
+
+        inline std::string aesEncryptToHexWithAAD(const std::string& algorithm,
+          const std::string_view& aesKey,
+          const std::string_view& data,
+             const std::string_view &aad) {
+            if (isAESKeyBitLenNotValid(aesKey.size()*8)) {
+                std::cerr << "aes secretKey size invalid" << algorithm << std::endl;
+                return "";
+            }
+            AESEncryptor aesEncryptor(algorithm, aesKey, "raw");
+            return aesEncryptor.encryptToHexWithAAD(data, aad);
+        }
+
+        inline std::string aesEncryptToBase64WithAAD(const std::string& algorithm,
+             const std::string_view& aesKey,
+             const std::string_view& data,
+             const std::string_view &aad) {
+            if (isAESKeyBitLenNotValid(aesKey.size()*8)) {
+                std::cerr << "aes secretKey size invalid" << algorithm << std::endl;
+                return "";
+            }
+            AESEncryptor aesEncryptor(algorithm, aesKey, "raw");
+            return aesEncryptor.encryptToBase64WithAAD(data, aad);
+        }
+
+        inline std::string aesDecryptWithAAD(const std::string& algorithm,
+        const std::string_view& aesKey,
+        const std::string_view& data,
+             const std::string_view &aad) {
+            if (isAESKeyBitLenNotValid(aesKey.size()*8)) {
+                std::cerr << "aes secretKey size invalid" << algorithm << std::endl;
+                return "";
+            }
+            AESDecryptor aesDecryptor(algorithm, aesKey, "raw");
+            return aesDecryptor.decryptWithAAD(data, aad);
+        }
+
+        inline std::string aesDecryptFromHexWithAAD(const std::string& algorithm,
+          const std::string_view& aesKey,
+          const std::string_view& data,
+             const std::string_view &aad) {
+            if (isAESKeyBitLenNotValid(aesKey.size()*8)) {
+                std::cerr << "aes secretKey size invalid" << algorithm << std::endl;
+                return "";
+            }
+            AESDecryptor aesDecryptor(algorithm, aesKey, "raw");
+            return aesDecryptor.decryptFromHexWithAAD(data, aad);
+        }
+
+        inline std::string aesDecryptFromBase64WithAAD(const std::string& algorithm,
+             const std::string_view& aesKey,
+             const std::string_view& data,
+             const std::string_view &aad) {
+            if (isAESKeyBitLenNotValid(aesKey.size()*8)) {
+                std::cerr << "aes secretKey size invalid" << algorithm << std::endl;
+                return "";
+            }
+            AESDecryptor aesDecryptor(algorithm, aesKey, "raw");
+            return aesDecryptor.decryptFromBase64WithAAD(data, aad);
+        }
 
 
+       namespace AESCBCUtils {
+            std::string encrypt(const std::string_view& aesKey, const std::string_view& data) {
+                return aesEncrypt("AES-CBC", aesKey, data);
+            }
+            std::string encryptToHex(const std::string_view& aesKey, const std::string_view& data) {
+                return aesEncryptToHex("AES-CBC", aesKey, data);
+            }
+            std::string encryptToBase64(const std::string_view& aesKey, const std::string_view& data) {
+                return aesEncryptToBase64("AES-CBC", aesKey, data);
+            }
+            std::string decrypt(const std::string_view& aesKey, const std::string_view& data) {
+                return aesDecrypt("AES-CBC", aesKey, data);
+            }
+            std::string decryptFromHex(const std::string_view& aesKey, const std::string_view& data) {
+                return aesDecryptFromHex("AES-CBC", aesKey, data);
+            }
+            std::string decryptFromBase64(const std::string_view& aesKey, const std::string_view& data) {
+                return aesDecryptFromBase64("AES-CBC", aesKey, data);
+            }
+        }
+
+        namespace AESGCMUtils {
+            std::string encrypt(const std::string_view& aesKey, const std::string_view& data) {
+                return aesEncrypt("AES-GCM", aesKey, data);
+            }
+            std::string encryptToHex(const std::string_view& aesKey, const std::string_view& data) {
+                return aesEncryptToHex("AES-GCM", aesKey, data);
+            }
+            std::string encryptToBase64(const std::string_view& aesKey, const std::string_view& data) {
+                return aesEncryptToBase64("AES-GCM", aesKey, data);
+            }
+            std::string decrypt(const std::string_view& aesKey, const std::string_view& data) {
+                return aesDecrypt("AES-GCM", aesKey, data);
+            }
+            std::string decryptFromHex(const std::string_view& aesKey, const std::string_view& data) {
+                return aesDecryptFromHex("AES-GCM", aesKey, data);
+            }
+            std::string decryptFromBase64(const std::string_view& aesKey, const std::string_view& data) {
+                return aesDecryptFromBase64("AES-GCM", aesKey, data);
+            }
+
+            std::string encryptWithAAD(const std::string_view& aesKey, const std::string_view& data, const std::string_view &aad) {
+                return aesEncryptWithAAD("AES-GCM", aesKey, data, aad);
+            }
+            std::string encryptToHexWithAAD(const std::string_view& aesKey, const std::string_view& data, const std::string_view &aad) {
+                return aesEncryptToHexWithAAD("AES-GCM", aesKey, data, aad);
+            }
+            std::string encryptToBase64WithAAD(const std::string_view& aesKey, const std::string_view& data, const std::string_view &aad) {
+                return aesEncryptToBase64WithAAD("AES-GCM", aesKey, data, aad);
+            }
+            std::string decryptWithAAD(const std::string_view& aesKey, const std::string_view& data, const std::string_view &aad) {
+                return aesDecryptWithAAD("AES-GCM", aesKey, data, aad);
+            }
+            std::string decryptFromHexWithAAD(const std::string_view& aesKey, const std::string_view& data, const std::string_view &aad) {
+                return aesDecryptFromHexWithAAD("AES-GCM", aesKey, data, aad);
+            }
+            std::string decryptFromBase64WithAAD(const std::string_view& aesKey, const std::string_view& data, const std::string_view &aad) {
+                return aesDecryptFromBase64WithAAD("AES-GCM", aesKey, data, aad);
+            }
+
+        }
+
+        namespace AESECBUtils {
+            std::string encrypt(const std::string_view& aesKey, const std::string_view& data) {
+                return aesEncrypt("AES-ECB", aesKey, data);
+            }
+            std::string encryptToHex(const std::string_view& aesKey, const std::string_view& data) {
+                return aesEncryptToHex("AES-ECB", aesKey, data);
+            }
+            std::string encryptToBase64(const std::string_view& aesKey, const std::string_view& data) {
+                return aesEncryptToBase64("AES-ECB", aesKey, data);
+            }
+            std::string decrypt(const std::string_view& aesKey, const std::string_view& data) {
+                return aesDecrypt("AES-ECB", aesKey, data);
+            }
+            std::string decryptFromHex(const std::string_view& aesKey, const std::string_view& data) {
+                return aesDecryptFromHex("AES-ECB", aesKey, data);
+            }
+            std::string decryptFromBase64(const std::string_view& aesKey, const std::string_view& data) {
+                return aesDecryptFromBase64("AES-ECB", aesKey, data);
+            }
+        }
 
     }
 }

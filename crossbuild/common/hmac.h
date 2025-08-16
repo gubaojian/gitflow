@@ -52,7 +52,7 @@ namespace camel {
          */
         class MacSigner {
         public:
-            explicit MacSigner(const std::string& algorithm, const std::string& secret);
+            explicit MacSigner(const std::string& algorithm, const std::string_view& secret);
             ~MacSigner()=default;
             std::string sign(const std::string_view& plainData);
             std::string signToHex(const std::string_view& data);
@@ -83,6 +83,10 @@ namespace camel {
             std::string hmac_sha256(const std::string_view& data, const std::string_view& secret);
             std::string hmac_sha256ToHex(const std::string_view& data, const std::string_view& secret);
             std::string hmac_sha256ToBase64(const std::string_view& data, const std::string_view& secret);
+
+            std::string hmac_sm3(const std::string_view& data, const std::string_view& secret);
+            std::string hmac_sm3ToHex(const std::string_view& data, const std::string_view& secret);
+            std::string hmac_sm3ToBase64(const std::string_view& data, const std::string_view& secret);
         }
 
 

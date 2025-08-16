@@ -643,6 +643,48 @@ namespace camel {
         }
 
 
+        class EvpKeyGuard {
+        public:
+            explicit EvpKeyGuard(EVP_PKEY* evpKey, bool needFree) {
+                this->evpKey = evpKey;
+                this->needFree = needFree;
+            }
+            ~EvpKeyGuard() {
+                if (needFree) {
+                    if (evpKey != nullptr) {
+                        EVP_PKEY_free(evpKey);
+                        evpKey = nullptr;
+                    }
+                }
+            }
+        public:
+            EvpKeyGuard(EvpKeyGuard const&)            = delete;
+            EvpKeyGuard& operator=(EvpKeyGuard const&) = delete;
+        private:
+            EVP_PKEY* evpKey;
+            bool  needFree;
+        };
+
+        class EvpKeyCtxGuard {
+        public:
+            explicit EvpKeyCtxGuard(EVP_PKEY_CTX* ctx) {
+                this->ctx = ctx;
+            }
+            ~EvpKeyCtxGuard() {
+                if (ctx != nullptr) {
+                    EVP_PKEY_CTX_free(ctx);
+                    ctx = nullptr;
+                }
+            }
+        public:
+            EvpKeyCtxGuard(EvpKeyCtxGuard const&)            = delete;
+            EvpKeyCtxGuard& operator=(EvpKeyCtxGuard const&) = delete;
+        private:
+            EVP_PKEY_CTX* ctx;
+        };
+
+
+
     }
 }
 
