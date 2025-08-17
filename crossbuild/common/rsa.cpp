@@ -906,6 +906,8 @@ namespace camel {
                 evpKey = RSAPublicKeyFrom(publicKey, format);
             }
             if (evpKey == nullptr) {
+                std::cerr << "RSAPublicKeyEncryptor::decrypt() Failed to create EVP_PKEY_CTX_new " << std::endl;
+                printOpenSSLError();
                 return "";
             }
             EvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
@@ -1070,6 +1072,8 @@ namespace camel {
                 evpKey = RSAPrivateKeyFrom(privateKey, format);
             }
             if (evpKey == nullptr) {
+                std::cerr << "RSAPrivateKeySigner::sign() Failed to create EVP_PKEY " << std::endl;
+                printOpenSSLError();
                 return "";
             }
             EvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
@@ -1141,7 +1145,7 @@ namespace camel {
                 evpKey = RSAPublicKeyFrom(publicKey, format);
             }
             if (evpKey == nullptr) {
-                std::cerr << "RSAPrivateKeyVerifier::verifySign() Failed to create EVP_PKEY " << std::endl;
+                std::cerr << "RSAPublicKeyVerifier::verifySign() Failed to create EVP_PKEY " << std::endl;
                 printOpenSSLError();
                 return false;
             }
