@@ -2,14 +2,14 @@
 // Created by baojian on 25-8-12.
 //
 
-#include "hmac.h"
+#include "mac.h"
 #include "config.h"
 #include "base64.h"
 #include "hex.h"
 #include <iostream>
 #include "openssl/evp.h"
 #include <openssl/err.h>
-#include <openssl/hmac.h>
+#include <openssl/mac.h>
 #include <openssl/rsa.h>
 #include <openssl/ssl.h>
 #include "openssl/core_names.h"

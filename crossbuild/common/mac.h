@@ -2,12 +2,12 @@
 // Created by baojian on 25-8-12.
 //
 
-#ifndef CAMEL_HMAC_SIGN_H
-#define CAMEL_HMAC_SIGN_H
+#ifndef CAMEL_MAC_SIGN_H
+#define CAMEL_MAC_SIGN_H
 #include <iostream>
 #include <string>
 
-#include "openssl/types.h"
+#include <openssl/types.h>
 
 namespace camel {
     namespace crypto {
@@ -110,4 +110,4 @@ namespace camel {
 
 
 
-#endif //CAMEL_HMAC_SIGN_H
+#endif //CAMEL_MAC_SIGN_H

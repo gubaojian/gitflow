@@ -35,7 +35,7 @@
 # endif
 # include <openssl/lhash.h>
 # include <openssl/pem.h>
-# include <openssl/hmac.h>
+# include <openssl/mac.h>
 # include <openssl/async.h>
 
 # include <openssl/safestack.h>

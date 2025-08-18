@@ -6,7 +6,7 @@
 #include "../common/config.h"
 #include "../common/base64.h"
 #include "../common/hex.h"
-#include "openssl/hmac.h"
+#include "openssl/mac.h"
 
 namespace camel {
     namespace crypto {

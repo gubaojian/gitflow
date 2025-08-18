@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include "../common/hex.h"
-#include "../common/hmac.h"
+#include "../common/mac.h"
 #include "../test/hmac_sha_256_signer.h"
 
 namespace camel {

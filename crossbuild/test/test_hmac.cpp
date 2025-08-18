@@ -9,7 +9,7 @@
 #include "hmac_sha_256_signer.h"
 #include "../common/base64.h"
 #include "../common/hex.h"
-#include "../common/hmac.h"
+#include "../common/mac.h"
 
 
 
