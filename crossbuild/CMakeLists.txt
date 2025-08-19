@@ -51,8 +51,8 @@ add_executable(crossbuild main.cpp
         common/rsa.h
         common/mac.cpp
         common/mac.h
-        common/elliptic_curve.cpp
-        common/elliptic_curve.h
+        common/ec.cpp
+        common/ec.h
         common/file_utils.h
         test/test_base64.cpp
         test/test_base64.h
@@ -76,6 +76,8 @@ add_executable(crossbuild main.cpp
         demo/demo_aes.h
         test/hmac_sha_256_signer.cpp
         test/hmac_sha_256_signer.h
+        test/test_ec.cpp
+        test/test_ec.h
 )
 
 target_link_libraries(crossbuild
@@ -87,8 +89,8 @@ target_link_libraries(crossbuild
 set(ENCRYPT_SOURCE
     common/Encrypt.cpp
     common/Encrypt.h
-        common/elliptic_curve.cpp
-        common/elliptic_curve.h
+        common/ec.cpp
+        common/ec.h
 )
 
 set(JNI_SOURCE

@@ -158,7 +158,12 @@ namespace camel {
             }
         }
 
+    }
+}
 
+
+namespace camel {
+    namespace crypto {
         inline int maxRsaEncryptPlainTextSize(EVP_PKEY* pkey, const std::string& paddings) {
             if (paddings == RSA_PKCS1Padding) { //RSA_PKCS1Padding
                 return (EVP_PKEY_bits(pkey) / 8) - 11;
@@ -210,8 +215,8 @@ namespace camel {
             return (EVP_PKEY_bits(pkey) / 8);
         }
 
-        bool configEncryptParams(EVP_PKEY_CTX *ctx, const std::string& paddings) {
-          if (paddings == RSA_OAEPPadding) {
+        bool rsaConfigEncryptParams(EVP_PKEY_CTX *ctx, const std::string& cliper) {
+          if (cliper == RSA_OAEPPadding) {
                 std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
                 std::string mainHash = OSSL_DIGEST_NAME_SHA1;
                 std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
@@ -223,12 +228,12 @@ namespace camel {
                   OSSL_PARAM_END
                  };
                 if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
-                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << cliper << std::endl;
                     printOpenSSLError();
                     return false;
                 }
                 return true;
-            } else if (paddings == RSA_OAEPWithSHA_1AndMGF1Padding) {
+            } else if (cliper == RSA_OAEPWithSHA_1AndMGF1Padding) {
                 std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
                 std::string mainHash = OSSL_DIGEST_NAME_SHA1;
                 std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
@@ -240,12 +245,12 @@ namespace camel {
                     OSSL_PARAM_END
                 };
                 if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
-                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << cliper << std::endl;
                     printOpenSSLError();
                     return false;
                 }
                 return true;
-            } else if (paddings == RSA_OAEPwithSHA_256andMGF1Padding) {
+            } else if (cliper == RSA_OAEPwithSHA_256andMGF1Padding) {
                 std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
                 std::string mainHash = OSSL_DIGEST_NAME_SHA2_256;
                 std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
@@ -257,12 +262,12 @@ namespace camel {
                     OSSL_PARAM_END
                 };
                 if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
-                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << cliper << std::endl;
                     printOpenSSLError();
                     return false;
                 }
                 return true;
-            } else if (paddings == RSA_OAEPwithSHA_384andMGF1Padding) {
+            } else if (cliper == RSA_OAEPwithSHA_384andMGF1Padding) {
                 std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
                 std::string mainHash = OSSL_DIGEST_NAME_SHA2_384;
                 std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
@@ -274,12 +279,12 @@ namespace camel {
                     OSSL_PARAM_END
                 };
                 if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
-                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << cliper << std::endl;
                     printOpenSSLError();
                     return false;
                 }
                 return true;
-            } else if (paddings == RSA_OAEPwithSHA_512andMGF1Padding) {
+            } else if (cliper == RSA_OAEPwithSHA_512andMGF1Padding) {
                 std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
                 std::string mainHash = OSSL_DIGEST_NAME_SHA2_512;
                 std::string mgf1Hash = OSSL_DIGEST_NAME_SHA1;
@@ -291,12 +296,12 @@ namespace camel {
                     OSSL_PARAM_END
                 };
                 if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
-                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << cliper << std::endl;
                     printOpenSSLError();
                     return false;
                 }
                 return true;
-            } else if (paddings == RSA_PKCS1Padding) {
+            } else if (cliper == RSA_PKCS1Padding) {
                 // RSA_PKCS1_PADDING
                 std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_PKCSV15;
                 OSSL_PARAM params[] = {
@@ -305,12 +310,12 @@ namespace camel {
                      OSSL_PARAM_END
                 };
                 if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
-                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << cliper << std::endl;
                     printOpenSSLError();
                     return false;
                 }
                 return true;
-            }else if (paddings ==  RSA_OAEP_SHA256_MGF1_SHA256) {
+            }else if (cliper ==  RSA_OAEP_SHA256_MGF1_SHA256) {
                 std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
                 std::string mainHash = OSSL_DIGEST_NAME_SHA2_256;
                 std::string mgf1Hash = OSSL_DIGEST_NAME_SHA2_256;
@@ -322,12 +327,12 @@ namespace camel {
                     OSSL_PARAM_END
                 };
                 if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
-                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << cliper << std::endl;
                     printOpenSSLError();
                     return false;
                 }
                 return true;
-            }else if (paddings ==  RSA_OAEP_SHA512_MGF1_SHA512) {
+            }else if (cliper ==  RSA_OAEP_SHA512_MGF1_SHA512) {
                 std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
                 std::string mainHash = OSSL_DIGEST_NAME_SHA2_512;
                 std::string mgf1Hash = OSSL_DIGEST_NAME_SHA2_512;
@@ -339,12 +344,12 @@ namespace camel {
                     OSSL_PARAM_END
                 };
                 if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
-                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << cliper << std::endl;
                     printOpenSSLError();
                     return false;
                 }
                 return true;
-            }else if (paddings ==  RSA_OAEP_SHA3_256_MGF1_SHA3_256) {
+            }else if (cliper ==  RSA_OAEP_SHA3_256_MGF1_SHA3_256) {
                 std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
                 std::string mainHash = OSSL_DIGEST_NAME_SHA3_256;
                 std::string mgf1Hash = OSSL_DIGEST_NAME_SHA3_256;
@@ -356,12 +361,12 @@ namespace camel {
                     OSSL_PARAM_END
                 };
                 if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
-                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << cliper << std::endl;
                     printOpenSSLError();
                     return false;
                 }
                 return true;
-            }else if (paddings ==  RSA_OAEP_SHA3_512_MGF1_SHA3_512) {
+            }else if (cliper ==  RSA_OAEP_SHA3_512_MGF1_SHA3_512) {
                 std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
                 std::string mainHash = OSSL_DIGEST_NAME_SHA3_512;
                 std::string mgf1Hash = OSSL_DIGEST_NAME_SHA3_512;
@@ -373,17 +378,17 @@ namespace camel {
                     OSSL_PARAM_END
                 };
                 if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
-                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << paddings << std::endl;
+                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex " << cliper << std::endl;
                     printOpenSSLError();
                     return false;
                 }
                 return true;
             }
-            std::cerr << "configEncryptParams unsupported mode " << paddings << std::endl;
+            std::cerr << "configEncryptParams unsupported mode " << cliper << std::endl;
             return false;
         }
 
-        bool configDecryptParams(EVP_PKEY_CTX *ctx, const std::string& paddings) {
+        bool rsaConfigDecryptParams(EVP_PKEY_CTX *ctx, const std::string& paddings) {
             if (paddings == RSA_OAEPPadding) {
                 std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_OAEP;
                 std::string mainHash = OSSL_DIGEST_NAME_SHA1;
@@ -643,13 +648,13 @@ namespace camel {
         }
 
 
-        class EvpKeyGuard {
+        class RSAEvpKeyGuard {
         public:
-            explicit EvpKeyGuard(EVP_PKEY* evpKey, bool needFree) {
+            explicit RSAEvpKeyGuard(EVP_PKEY* evpKey, bool needFree) {
                 this->evpKey = evpKey;
                 this->needFree = needFree;
             }
-            ~EvpKeyGuard() {
+            ~RSAEvpKeyGuard() {
                 if (needFree) {
                     if (evpKey != nullptr) {
                         EVP_PKEY_free(evpKey);
@@ -658,8 +663,8 @@ namespace camel {
                 }
             }
         public:
-            EvpKeyGuard(EvpKeyGuard const&)            = delete;
-            EvpKeyGuard& operator=(EvpKeyGuard const&) = delete;
+            RSAEvpKeyGuard(RSAEvpKeyGuard const&)            = delete;
+            RSAEvpKeyGuard& operator=(RSAEvpKeyGuard const&) = delete;
         private:
             EVP_PKEY* evpKey;
             bool  needFree;
@@ -682,12 +687,8 @@ namespace camel {
         private:
             EVP_PKEY_CTX* ctx;
         };
-
-
-
     }
 }
-
 
 
 namespace camel {
@@ -757,7 +758,7 @@ namespace camel {
                 return "";
             }
             if (i2d_PUBKEY_bio(bio, pkey) != 1) {
-                std::cerr << "RSAKeyPairGenerator::getPublicKey()Failed to write private key to BIO" << std::endl;
+                std::cerr << "RSAKeyPairGenerator::getPublicKey()Failed to write public key to BIO" << std::endl;
                 printOpenSSLError();
                 BIO_free(bio);
                 return "";
@@ -765,7 +766,7 @@ namespace camel {
             char* buf;
             long len = BIO_get_mem_data(bio, &buf);
             if (len <= 0) {
-                std::cerr << "RSAKeyPairGenerator::getPublicKey() Failed to write private key to BIO" << std::endl;
+                std::cerr << "RSAKeyPairGenerator::getPublicKey() Failed to write public key to BIO" << std::endl;
                 printOpenSSLError();
                 BIO_free(bio);
                 return "";
@@ -889,7 +890,6 @@ namespace camel {
 namespace camel {
     namespace crypto {
 
-
         RSAPublicKeyEncryptor::RSAPublicKeyEncryptor(const std::string_view &publicKey, const std::string_view &format, const std::string_view &paddings) {
             this->paddings = paddings;
             this->format = format;
@@ -910,7 +910,7 @@ namespace camel {
                 printOpenSSLError();
                 return "";
             }
-            EvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
+            RSAEvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
             EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(evpKey, nullptr);
             if (ctx == nullptr) {
                 std::cerr << "RSAPublicKeyEncryptor::encrypt() Failed to create EVP_PKEY_CTX_new " << std::endl;
@@ -918,7 +918,7 @@ namespace camel {
                 return "";
             }
 
-            if (!configEncryptParams(ctx, paddings)) {
+            if (!rsaConfigEncryptParams(ctx, paddings)) {
                 EVP_PKEY_CTX_free(ctx);
                 return "";
             }
@@ -988,7 +988,7 @@ namespace camel {
             if (evpKey == nullptr) {
                 return "";
             }
-            EvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
+            RSAEvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
 
             EVP_PKEY_CTX * ctx = EVP_PKEY_CTX_new(evpKey, nullptr);
 
@@ -998,7 +998,7 @@ namespace camel {
                 return "";
             }
 
-            if (!configDecryptParams(ctx, paddings)) {
+            if (!rsaConfigDecryptParams(ctx, paddings)) {
                 EVP_PKEY_CTX_free(ctx);
                 return "";
             }
@@ -1076,7 +1076,7 @@ namespace camel {
                 printOpenSSLError();
                 return "";
             }
-            EvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
+            RSAEvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
 
             EVP_MD_CTX* ctx = EVP_MD_CTX_new();
             if (ctx == nullptr) {
@@ -1149,7 +1149,7 @@ namespace camel {
                 printOpenSSLError();
                 return false;
             }
-            EvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
+            RSAEvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
 
             EVP_MD_CTX* ctx = EVP_MD_CTX_new();
             if (ctx == nullptr) {
