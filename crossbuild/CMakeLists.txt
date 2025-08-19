@@ -78,6 +78,10 @@ add_executable(crossbuild main.cpp
         test/hmac_sha_256_signer.h
         test/test_ec.cpp
         test/test_ec.h
+        common/sm2.cpp
+        common/sm2.h
+        test/test_sm2.cpp
+        test/test_sm2.h
 )
 
 target_link_libraries(crossbuild
