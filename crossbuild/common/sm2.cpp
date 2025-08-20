@@ -457,13 +457,13 @@ namespace camel {
          */
         bool sm2_is_OpenSSL_ASN1_Format(const std::string_view& source) {
             const unsigned char* in = (const unsigned char*)source.data();
-            CAMEL_SM2_Ciphertext* a = nullptr;
+            CAMEL_SM2_Ciphertext* aCtx = nullptr;
             const unsigned char* p = in;
-            a = d2i_CAMEL_SM2_Ciphertext(nullptr, &p, source.size());
-            if (a == nullptr) {
+            aCtx = d2i_CAMEL_SM2_Ciphertext(nullptr, &p, source.size());
+            if (aCtx == nullptr) {
                 return false;
             }
-            CAMEL_SM2_Ciphertext_free(a);
+            CAMEL_SM2_Ciphertext_free(aCtx);
             return true;
         }
 
@@ -494,7 +494,7 @@ namespace camel {
          *                return Arrays.concatenate(c1, c3, c2);
          *            default:
           *               return Arrays.concatenate(c1, c2, c3);
-        *   c1[64]  + c2 + c3[32]
+        *    c1[64]  + c2 + c3[32]
         *   对于输出 c1 + c3 + c2 的情况，可参考这个代码根据场景进行实现。
          */
         std::string sm2_java_c1_c2_c3_to_OpenSSL_ASN1_Format(const std::string_view& javaData) {
@@ -504,7 +504,7 @@ namespace camel {
             std::string_view source = javaData;
             //非压缩格式标识符号 0x04 + 64位c1。  0x03 或者 0x02是压缩个暂时不支持
             //java中的格式实现可参考： ECPoint中的getEncoded方法
-            if (javaData[0] == 0x04) {
+            if (javaData[0] == 0x04) {  // compressFlag +  c1[64]  + c2 + c3[32]
                 if (javaData.length() <= 97) {
                     return  "";
                 }
@@ -570,7 +570,7 @@ namespace camel {
             std::string_view source = javaData;
             //非压缩格式标识符号 0x04 + 64位c1。  0x03 或者 0x02是压缩个暂时不支持
             //java中的格式实现可参考： ECPoint中的getEncoded方法
-            if (javaData[0] == 0x04) {
+            if (javaData[0] == 0x04) { // compressFlag +  c1[64] + c3[32] + c2
                 if (javaData.length() <= 97) {
                     return  "";
                 }
