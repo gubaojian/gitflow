@@ -31,6 +31,7 @@ namespace camel {
             SM2KeyPairGenerator(const SM2KeyPairGenerator&) = delete;
             SM2KeyPairGenerator& operator=(const SM2KeyPairGenerator&) = delete;
         private:
+            void createSM2KeyPair();
             void clean();
         private:
             EVP_PKEY_CTX* ctx = nullptr;
@@ -64,8 +65,8 @@ namespace camel {
         std::string sm2_java_c1_c2_c3_to_OpenSSL_ASN1_Format(const std::string_view& javaData);
         std::string sm2_java_c1_c3_c2_to_OpenSSL_ASN1_Format(const std::string_view& javaData);
 
-        std::string sm2_ASN1_to_java_c1_c3_c2_Format(const std::string_view& ans1Data);
-        std::string sm2_ASN1_to_java_c1_c2_c3_Format(const std::string_view& ans1Data);
+        std::string sm2_ASN1_to_java_c1_c3_c2_Format(const std::string_view& asn1Data);
+        std::string sm2_ASN1_to_java_c1_c2_c3_Format(const std::string_view& asn1Data);
     }
 }
 

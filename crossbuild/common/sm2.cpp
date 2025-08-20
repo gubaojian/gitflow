@@ -16,9 +16,14 @@
 
 namespace camel {
     namespace crypto {
+
         SM2KeyPairGenerator::SM2KeyPairGenerator() {
             this->ctx = nullptr;
             this->pkey = nullptr;
+            this->createSM2KeyPair();
+        }
+
+        void SM2KeyPairGenerator::createSM2KeyPair() {
             std::string curveName = "SM2";
             ctx = EVP_PKEY_CTX_new_from_name(nullptr, "SM2", nullptr);
             if (!ctx) {
@@ -30,12 +35,13 @@ namespace camel {
             if (EVP_PKEY_keygen_init(ctx) <= 0) {
                 std::cerr << " SM2KeyPairGenerator Failed to EVP_PKEY_keygen_init "<< curveName << std::endl;
                 printOpenSSLError();
+                clean();
                 return;
             }
             {
                 /*
                  * use_cofactordh This is an optional parameter.
-                 * For many curves where the cofactor is 1, setting this has no effSM2t.
+                 * For many curves where the cofactor is 1, setting this has no effect.
                  */
                 int use_cofactordh = 1;
                 OSSL_PARAM params[] = {
@@ -48,6 +54,7 @@ namespace camel {
                 if (!EVP_PKEY_CTX_set_params(ctx, params)) {
                     std::cerr << " SM2KeyPairGenerator Failed to EVP_PKEY_CTX_set_params "<< curveName << std::endl;
                     printOpenSSLError();
+                    clean();
                     return;
                 }
             }
@@ -55,6 +62,7 @@ namespace camel {
             if (EVP_PKEY_keygen(ctx, &pkey) <= 0) {
                 std::cerr << " SM2KeyPairGenerator Failed to EVP_PKEY_keygen "<<  curveName << std::endl;
                 printOpenSSLError();
+                clean();
                 return;
             }
         }
@@ -196,7 +204,7 @@ namespace camel {
                 return "";
             }
             if (PEM_write_bio_PUBKEY(bio, pkey) != 1) {
-                std::cerr << "SM2KeyPairGenerator::getPemPublicKey() Failed to write private key to BIO" << std::endl;
+                std::cerr << "SM2KeyPairGenerator::getPemPublicKey() Failed to write public key to BIO" << std::endl;
                 printOpenSSLError();
                 BIO_free(bio);
                 return "";
@@ -313,7 +321,7 @@ namespace camel {
             const unsigned char *in = (const unsigned char *)derKey.data();
             long length = derKey.size();
             if (d2i_PrivateKey(EVP_PKEY_SM2, &key, &in, length) == nullptr) {
-                std::cerr << "SM2PublicKeyFromDer Failed to d2i_PrivateKey " << std::endl;
+                std::cerr << "SM2PrivateKeyFromDer Failed to d2i_PrivateKey " << std::endl;
                 printOpenSSLError();
                 return nullptr;
             }
@@ -400,7 +408,7 @@ namespace camel {
              OSSL_PARAM_END
             };
             if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
-                std::cerr << "sm2ConfigEncryptParams Failed to EVP_PKEY_CTX_set_params" << std::endl;
+                std::cerr << "sm2ConfigEncryptParams Failed to EVP_PKEY_encrypt_init_ex" << std::endl;
                 printOpenSSLError();
                 return false;
             }
@@ -412,7 +420,7 @@ namespace camel {
                 OSSL_PARAM_END
             };
             if (EVP_PKEY_decrypt_init_ex(ctx, params) <= 0) {
-                std::cerr << "sm2ConfigDecryptParams Failed to EVP_PKEY_CTX_set_params" << std::endl;
+                std::cerr << "sm2ConfigDecryptParams Failed to EVP_PKEY_decrypt_init_ex" << std::endl;
                 printOpenSSLError();
                 return false;
             }
@@ -459,19 +467,23 @@ namespace camel {
             return true;
         }
 
-        inline void freeCiphertextStructInnerData(const CAMEL_SM2_Ciphertext& ctx) {
+        inline void freeCiphertextStructInnerData(CAMEL_SM2_Ciphertext& ctx) {
             if (ctx.C1x != nullptr) {
                 BN_free(ctx.C1x);
+                ctx.C1x = nullptr;
             }
             if (ctx.C1y != nullptr) {
                 BN_free(ctx.C1y);
+                ctx.C1y = nullptr;
             }
             if (ctx.C2 != nullptr) {
                 ASN1_OCTET_STRING_free(ctx.C2);
+                ctx.C2 = nullptr;
             }
 
             if (ctx.C3 != nullptr) {
                 ASN1_OCTET_STRING_free(ctx.C3);
+                ctx.C3 = nullptr;
             }
         };
 
@@ -607,14 +619,14 @@ namespace camel {
                 return "";
             }
 
-            std::string ans1Buffer(source.size() + 512, '\0');
-            unsigned char* out = (unsigned char*)ans1Buffer.data();
+            std::string asn1Buffer(source.size() + 512, '\0');
+            unsigned char* out = (unsigned char*)asn1Buffer.data();
             int outlen = i2d_CAMEL_SM2_Ciphertext(&ctx, &out);
-            ans1Buffer.resize(outlen);
+            asn1Buffer.resize(outlen);
 
             freeCiphertextStructInnerData(ctx);
 
-            return ans1Buffer;
+            return asn1Buffer;
         }
 
         /**
@@ -627,15 +639,15 @@ namespace camel {
        *   c1[64]  + c2 + c3[32]
        *   把ASN1转换为非压缩 compressFlag + c1[64]  + c2 + c3[32]格式的数据。
         */
-        std::string sm2_ASN1_to_java_c1_c2_c3_Format(const std::string_view& ans1Data) {
-            if (ans1Data.size() <= 96) {
-                std::cerr << "sm2_ASN1_to_java_c1_c2_c3_Format ans1Data.size() illegal" << std::endl;
+        std::string sm2_ASN1_to_java_c1_c2_c3_Format(const std::string_view& asn1Data) {
+            if (asn1Data.size() <= 96) {
+                std::cerr << "sm2_ASN1_to_java_c1_c2_c3_Format asn1Data.size() illegal" << std::endl;
                 return "";
             }
-            const unsigned char* in = (const unsigned char*)ans1Data.data();
+            const unsigned char* in = (const unsigned char*)asn1Data.data();
             CAMEL_SM2_Ciphertext* ctx = nullptr;
             const unsigned char* p = in;
-            ctx = d2i_CAMEL_SM2_Ciphertext(nullptr, &p, ans1Data.size());
+            ctx = d2i_CAMEL_SM2_Ciphertext(nullptr, &p, asn1Data.size());
             if (ctx == nullptr) {
                 std::cerr << "sm2_ASN1_to_java_c1_c2_c3_Format d2i_CAMEL_SM2_Ciphertext error" << std::endl;
                 return "";
@@ -677,15 +689,15 @@ namespace camel {
 
 
         // 把ASN1转换为非压缩 compressFlag + c1[64] + c3[32]  + c2 格式的数据。
-        std::string sm2_ASN1_to_java_c1_c3_c2_Format(const std::string_view& ans1Data) {
-            if (ans1Data.size() <= 96) {
-                std::cerr << "sm2_ASN1_to_java_c1_c3_c2_Format ans1Data.size() illegal" << std::endl;
+        std::string sm2_ASN1_to_java_c1_c3_c2_Format(const std::string_view& asn1Data) {
+            if (asn1Data.size() <= 96) {
+                std::cerr << "sm2_ASN1_to_java_c1_c3_c2_Format asn1Data.size() illegal" << std::endl;
                 return "";
             }
-            const unsigned char* in = (const unsigned char*)ans1Data.data();
+            const unsigned char* in = (const unsigned char*)asn1Data.data();
             CAMEL_SM2_Ciphertext* ctx = nullptr;
             const unsigned char* p = in;
-            ctx = d2i_CAMEL_SM2_Ciphertext(nullptr, &p, ans1Data.size());
+            ctx = d2i_CAMEL_SM2_Ciphertext(nullptr, &p, asn1Data.size());
             if (ctx == nullptr) {
                 std::cerr << "sm2_ASN1_to_java_c1_c3_c2_Format d2i_CAMEL_SM2_Ciphertext error" << std::endl;
                 return "";
@@ -745,7 +757,7 @@ namespace camel {
                 evpKey = SM2PublicKeyFrom(publicKey, format);
             }
             if (evpKey == nullptr) {
-                std::cerr << "SM2PublicKeyEncryptor::encrypt() Failed to create EVP_PKEY_CTX_new " << std::endl;
+                std::cerr << "SM2PublicKeyEncryptor::encrypt() Failed to get SM2 public key " << std::endl;
                 printOpenSSLError();
                 return "";
             }
@@ -841,29 +853,33 @@ namespace camel {
                   EVP_PKEY_CTX_free(ctx);
                   return "";
               }
-              std::string_view ans1Data = sourceData;
-              std::string ans1DataHoler;
+              std::string_view asn1Data = sourceData;
+              std::string asn1DataHolder;
               if (dataModeFlag == "C1C2C3") {
-                  ans1DataHoler = sm2_java_c1_c2_c3_to_OpenSSL_ASN1_Format(sourceData);
-                  ans1Data = ans1DataHoler;
+                  asn1DataHolder = sm2_java_c1_c2_c3_to_OpenSSL_ASN1_Format(sourceData);
+                  asn1Data = asn1DataHolder;
               } else if (dataModeFlag == "C1C3C2") {
-                  ans1DataHoler = sm2_java_c1_c3_c2_to_OpenSSL_ASN1_Format(sourceData);
-                  ans1Data = ans1DataHoler;
+                  asn1DataHolder = sm2_java_c1_c3_c2_to_OpenSSL_ASN1_Format(sourceData);
+                  asn1Data = asn1DataHolder;
               } else if (!sm2_is_OpenSSL_ASN1_Format(sourceData)) {
-                  ans1DataHoler = sm2_java_c1_c2_c3_to_OpenSSL_ASN1_Format(sourceData);
-                  ans1Data = ans1DataHoler;
+#ifdef CAMEL_DEBUG_LOG
+                  std::cout << "none dataModeFlag set, but data is not std ASN1 format (OpenSSL), you can set dataModeFlag to specific the data format" << std::endl;
+                  std::cout << "SM2PrivateKeyDecryptor::decrypt() assemble data format is C1C2C3, and auto convert it to ASN1 format " << std::endl;
+#endif
+                  asn1DataHolder = sm2_java_c1_c2_c3_to_OpenSSL_ASN1_Format(sourceData);
+                  asn1Data = asn1DataHolder;
              }
 
               std::string buffer;
-              int bigBufferSize = ans1Data.size();
+              int bigBufferSize = asn1Data.size();
               buffer.resize(std::max(bigBufferSize, 1024));
 
 
-              unsigned char *in = (unsigned char *) ans1Data.data();
+              unsigned char *in = (unsigned char *) asn1Data.data();
               unsigned char *out = (unsigned char *) buffer.data();
               size_t totalLength = 0;
               size_t outlen = buffer.size() - totalLength;
-              size_t inlen = ans1Data.size();
+              size_t inlen = asn1Data.size();
               if (EVP_PKEY_decrypt(ctx, out, &outlen, in, inlen) <= 0) {
                   std::cerr << "SM2PrivateKeyDecryptor::decrypt() Failed to EVP_PKEY_decrypt " << std::endl;
                   printOpenSSLError();

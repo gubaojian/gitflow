@@ -110,7 +110,7 @@ namespace camel {
             const unsigned char *in = (const unsigned char *)derKey.data();
             long length = derKey.size();
             if (d2i_PrivateKey(EVP_PKEY_RSA, &key, &in, length) == nullptr) {
-                std::cerr << "RSAPublicKeyFromDer Failed to d2i_PrivateKey " << std::endl;
+                std::cerr << "RSAPrivateKeyFromDer Failed to d2i_PrivateKey " << std::endl;
                 printOpenSSLError();
                 return nullptr;
             }
@@ -867,7 +867,7 @@ namespace camel {
                 return "";
             }
             if (PEM_write_bio_PUBKEY(bio, pkey) != 1) {
-                std::cerr << "RSAKeyPairGenerator::getPemPublicKey() Failed to write private key to BIO" << std::endl;
+                std::cerr << "RSAKeyPairGenerator::getPemPublicKey() Failed to write public key to BIO" << std::endl;
                 printOpenSSLError();
                 BIO_free(bio);
                 return "";

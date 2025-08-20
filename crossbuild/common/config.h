@@ -25,6 +25,8 @@
 
 #define CAMEL_EVP_KEY_CACHE_SIZE  8
 
+//#define CAMEL_DEBUG_LOG  1
+
 namespace camel{
   namespace crypto {
     void initLibCrypto();
