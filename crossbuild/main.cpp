@@ -17,6 +17,7 @@
 #include <fstream>
 #include <stdexcept>
 #include "demo/demo_hmac.h"
+#include "test/test_chacha20.h"
 #include "test/test_digest.h"
 #include "test/test_ec.h"
 #include "test/test_hmac.h"
@@ -35,6 +36,8 @@ void runAllTests() {
     testHmac();
     testDigest();
     //testEcKeyGen();
+    testSM2KeyGen();
+    testSM2KeyEncrypt();
 }
 
 void runAllDemos() {
@@ -51,8 +54,8 @@ void runAllDemos() {
 
    // testEcKeyGen();
    // testEcKeyEncrypt();
-    testSM2KeyGen();
-    testSM2KeyEncrypt();
+
+    testChaCha20KeyGen();
 
 }
 

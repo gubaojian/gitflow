@@ -82,6 +82,10 @@ add_executable(crossbuild main.cpp
         common/sm2.h
         test/test_sm2.cpp
         test/test_sm2.h
+        common/chacha20.cpp
+        common/chacha20.h
+        test/test_chacha20.cpp
+        test/test_chacha20.h
 )
 
 target_link_libraries(crossbuild

@@ -41,7 +41,6 @@ namespace camel {
 
                 std::cout << "encryptor ANS1 result" << std::endl;
                 std::cout << encrypt64Data << std::endl;
-                std::cout << encryptor.encrypt(plainText).length() << std::endl;
 
                 SM2PrivateKeyDecryptor decryptor(privateKey, "hex", "");
                 std::cout << decryptor.decryptFromBase64(encrypt64Data) << std::endl;

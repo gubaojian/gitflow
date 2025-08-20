@@ -451,7 +451,7 @@ namespace camel {
 
         /**
          * sm2_crypt.c 检查是否是openssl输出ASN1结构
-         * openssl ansi format
+         * openssl ASN1 format
          * @param source
          * @return
          */
