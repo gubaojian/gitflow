@@ -459,7 +459,7 @@ namespace camel {
             return true;
         }
 
-        inline void sm2_free_CAMEL_SM2_Ciphertext(const CAMEL_SM2_Ciphertext& ctx) {
+        inline void freeCiphertextStructInnerData(const CAMEL_SM2_Ciphertext& ctx) {
             if (ctx.C1x != nullptr) {
                 BN_free(ctx.C1x);
             }
@@ -508,36 +508,36 @@ namespace camel {
             ctx.C1x = BN_bin2bn(in, 32, nullptr);
             if (ctx.C1x == nullptr) {
                 std::cerr << "java_c1_c2_c3_to_OpenSSL_ASN1_Format BN_bin2bn ctx.C1x error" << std::endl;
-                sm2_free_CAMEL_SM2_Ciphertext(ctx);
+                freeCiphertextStructInnerData(ctx);
                 return "";
             }
             ctx.C1y = BN_bin2bn(in + 32, 32, nullptr);
             if (ctx.C1y == nullptr) {
                 std::cerr << "java_c1_c2_c3_to_OpenSSL_ASN1_Format BN_bin2bn ctx.C1y error" << std::endl;
-                sm2_free_CAMEL_SM2_Ciphertext(ctx);
+                freeCiphertextStructInnerData(ctx);
                 return "";
             }
             ctx.C2 = ASN1_OCTET_STRING_new();
             if (ctx.C2 == nullptr) {
                 std::cerr << "java_c1_c2_c3_to_OpenSSL_ASN1_Format ASN1_OCTET_STRING_new ctx.C2 error" << std::endl;
-                sm2_free_CAMEL_SM2_Ciphertext(ctx);
+                freeCiphertextStructInnerData(ctx);
                 return "";
             }
             if (!ASN1_OCTET_STRING_set(ctx.C2, in + 64, source.size() - 96)) {
                 std::cerr << "java_c1_c2_c3_to_OpenSSL_ASN1_Format ASN1_OCTET_STRING_set ctx.C2 error" << std::endl;
-                sm2_free_CAMEL_SM2_Ciphertext(ctx);
+                freeCiphertextStructInnerData(ctx);
                 return "";
             }
 
             ctx.C3 = ASN1_OCTET_STRING_new();
             if (ctx.C3 == nullptr) {
                 std::cerr << "java_c1_c2_c3_to_OpenSSL_ASN1_Format ASN1_OCTET_STRING_new ctx.C3 error" << std::endl;
-                sm2_free_CAMEL_SM2_Ciphertext(ctx);
+                freeCiphertextStructInnerData(ctx);
                 return "";
             }
             if (!ASN1_OCTET_STRING_set(ctx.C3, in + (source.size() - 32), 32)) {
                 std::cerr << "java_c1_c2_c3_to_OpenSSL_ASN1_Format ASN1_OCTET_STRING_set ctx.C3 error" << std::endl;
-                sm2_free_CAMEL_SM2_Ciphertext(ctx);
+                freeCiphertextStructInnerData(ctx);
                 return "";
             }
 
@@ -546,7 +546,7 @@ namespace camel {
             int outlen = i2d_CAMEL_SM2_Ciphertext(&ctx, &out);
             buffer.resize(outlen);
 
-            sm2_free_CAMEL_SM2_Ciphertext(ctx);
+            freeCiphertextStructInnerData(ctx);
 
             return buffer;
         }
@@ -574,36 +574,36 @@ namespace camel {
             ctx.C1x = BN_bin2bn(in, 32, nullptr);
             if (ctx.C1x == nullptr) {
                 std::cerr << "java_c1_c3_c2_to_OpenSSL_ASN1_Format BN_bin2bn ctx.C1x error" << std::endl;
-                sm2_free_CAMEL_SM2_Ciphertext(ctx);
+                freeCiphertextStructInnerData(ctx);
                 return "";
             }
             ctx.C1y = BN_bin2bn(in + 32, 32, nullptr);
             if (ctx.C1y == nullptr) {
                 std::cerr << "java_c1_c3_c2_to_OpenSSL_ASN1_Format BN_bin2bn ctx.C1y error" << std::endl;
-                sm2_free_CAMEL_SM2_Ciphertext(ctx);
+                freeCiphertextStructInnerData(ctx);
                 return "";
             }
             ctx.C3 = ASN1_OCTET_STRING_new();
             if (ctx.C3 == nullptr) {
                 std::cerr << "java_c1_c3_c2_to_OpenSSL_ASN1_Format ASN1_OCTET_STRING_new ctx.C3 error" << std::endl;
-                sm2_free_CAMEL_SM2_Ciphertext(ctx);
+                freeCiphertextStructInnerData(ctx);
                 return "";
             }
             if (!ASN1_OCTET_STRING_set(ctx.C3, in + 64, 32)) {
                 std::cerr << "java_c1_c3_c2_to_OpenSSL_ASN1_Format ASN1_OCTET_STRING_set ctx.C3 error" << std::endl;
-                sm2_free_CAMEL_SM2_Ciphertext(ctx);
+                freeCiphertextStructInnerData(ctx);
                 return "";
             }
 
             ctx.C2 = ASN1_OCTET_STRING_new();
             if (ctx.C2 == nullptr) {
                 std::cerr << "java_c1_c3_c2_to_OpenSSL_ASN1_Format ASN1_OCTET_STRING_new ctx.C2 error" << std::endl;
-                sm2_free_CAMEL_SM2_Ciphertext(ctx);
+                freeCiphertextStructInnerData(ctx);
                 return "";
             }
             if (!ASN1_OCTET_STRING_set(ctx.C2, in + 64 +  32, (source.size() - 32 - 64))) {
                 std::cerr << "java_c1_c3_c2_to_OpenSSL_ASN1_Format ASN1_OCTET_STRING_set ctx.C2 error" << std::endl;
-                sm2_free_CAMEL_SM2_Ciphertext(ctx);
+                freeCiphertextStructInnerData(ctx);
                 return "";
             }
 
@@ -612,7 +612,7 @@ namespace camel {
             int outlen = i2d_CAMEL_SM2_Ciphertext(&ctx, &out);
             ans1Buffer.resize(outlen);
 
-            sm2_free_CAMEL_SM2_Ciphertext(ctx);
+            freeCiphertextStructInnerData(ctx);
 
             return ans1Buffer;
         }
@@ -745,7 +745,7 @@ namespace camel {
                 evpKey = SM2PublicKeyFrom(publicKey, format);
             }
             if (evpKey == nullptr) {
-                std::cerr << "SM2PublicKeyEncryptor::decrypt() Failed to create EVP_PKEY_CTX_new " << std::endl;
+                std::cerr << "SM2PublicKeyEncryptor::encrypt() Failed to create EVP_PKEY_CTX_new " << std::endl;
                 printOpenSSLError();
                 return "";
             }
@@ -808,10 +808,11 @@ namespace camel {
           SM2PrivateKeyDecryptor::SM2PrivateKeyDecryptor(const std::string_view& privateKey,
                           const std::string_view& format,
                           const std::string_view& dataModeFlag) {
-                    this->dataModeFlag = dataModeFlag;
-                    this->format = format;
-                    this->privateKey = privateKey;
-                    this->externalEvpKey = nullptr;
+            this->dataModeFlag = dataModeFlag;
+            this->format = format;
+            this->privateKey = privateKey;
+            this->externalEvpKey = nullptr;
+            std::transform(this->dataModeFlag.begin(), this->dataModeFlag.end(), this->dataModeFlag.begin(), ::toupper);
           }
 
           std::string SM2PrivateKeyDecryptor::decrypt(const std::string_view &sourceData) {
