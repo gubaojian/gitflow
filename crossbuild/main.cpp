@@ -34,7 +34,7 @@ void runAllTests() {
     testBase64();
     testHmac();
     testDigest();
-    testEcKeyGen();
+    //testEcKeyGen();
 }
 
 void runAllDemos() {

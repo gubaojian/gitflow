@@ -61,6 +61,11 @@ namespace camel {
                 EVP_PKEY_free(key);
             }
         }
+        std::string sm2_java_c1_c2_c3_to_OpenSSL_ASN1_Format(const std::string_view& javaData);
+        std::string sm2_java_c1_c3_c2_to_OpenSSL_ASN1_Format(const std::string_view& javaData);
+
+        std::string sm2_ASN1_to_java_c1_c3_c2_Format(const std::string_view& ans1Data);
+        std::string sm2_ASN1_to_java_c1_c2_c3_Format(const std::string_view& ans1Data);
     }
 }
 
@@ -74,7 +79,7 @@ namespace camel {
             * format = "pem", "hex", "base64", "der"
              */
             explicit SM2PublicKeyEncryptor(const std::string_view& publicKey,
-                 const std::string_view& format = "pem", const std::string_view& algorithm = "AES-256-GCM");
+                 const std::string_view& format = "pem", const std::string_view& dataModeFlag = "ANS1");
 
             ~SM2PublicKeyEncryptor() = default;
 
@@ -92,10 +97,17 @@ namespace camel {
             void setExternalEvpKey(EVP_PKEY* pkey) {
                 this->externalEvpKey = pkey;
             }
+           /**
+           * 设置加密密数据格式：ANS1 C1C2C3 C1C3C2
+           * @param modeFlag
+           */
+            void setDataModeFlag(const std::string& modeFlag) {
+                this->dataModeFlag = modeFlag;
+            }
         private:
             std::string publicKey;
             std::string format;
-            std::string algorithm;
+            std::string dataModeFlag; //输出格式 ANS1 C1C2C3 C1C3C2  解密JAVA数据时格式 C1 C2 C3 还是 C1 C3 C2. 默认ANS1，如果不是自动用C1 C2 C3格式转换
         private:
             EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
         };
@@ -108,7 +120,7 @@ namespace camel {
         public:
             explicit SM2PrivateKeyDecryptor(const std::string_view& privateKey,
                   const std::string_view& format = "pem",
-                  const std::string_view& algorithm = "");
+                  const std::string_view& dataModeFlag = "ANS1");
             ~SM2PrivateKeyDecryptor() = default;
         public:
             SM2PrivateKeyDecryptor(const SM2PrivateKeyDecryptor&) = delete;
@@ -126,10 +138,18 @@ namespace camel {
             void setExternalEvpKey(EVP_PKEY* pkey) {
                 this->externalEvpKey = pkey;
             }
+
+            /**
+             * 设置解密数据格式：ANS1 C1C2C3 C1C3C2
+             * @param modeFlag
+             */
+            void setDataModeFlag(const std::string& modeFlag) {
+                this->dataModeFlag = modeFlag;
+            }
         private:
             std::string privateKey;
             std::string format;
-            std::string algorithm;
+            std::string dataModeFlag; // ANS1 C1C2C3 C1C3C2  解密JAVA数据时格式 C1 C2 C3 还是 C1 C3 C2. 默认ANS1，如果不是自动用C1 C2 C3格式转换
         private:
             EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
         };
