@@ -165,7 +165,7 @@ namespace camel {
               * format = "pem", "hex", "base64", "der"
               * sm2UserId 1234567812345678
                */
-            explicit SM2PrivateKeySigner(const std::string_view& publicKey,
+            explicit SM2PrivateKeySigner(const std::string_view& privateKey,
                   const std::string_view& format = "pem",
                   const std::string_view& sm2UserId = "1234567812345678");
             ~SM2PrivateKeySigner() = default;
@@ -235,7 +235,7 @@ namespace camel {
         private:
             EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
         };
-        
+
     }
 }
 

@@ -18,8 +18,13 @@ namespace camel {
                 SM2KeyPairGenerator generator;
                 passed = passed && (generator.getPublicKey().size() > 0);
                 passed = passed && (generator.getPrivateKey().size() > 0);
+                std::cout << "----------------------- SM2KeyGen -----------------------" << std::endl;
+                std::cout << generator.getBase64PrivateKey() << std::endl;
+                std::cout << generator.getBase64PublicKey() << std::endl;
+                std::cout << "----------------------- SM2KeyGen -----------------------" << std::endl;
 
-                std::cout << generator.getPemPrivateKey() << std::endl;
+                std::string hexKey = generator.getHexPrivateKey();
+                std::cout << SM2PrivateKeyFrom(hexKey,"hex")  << std::endl;
             }
             if (passed) {
                 std::cout << "testSM2KeyGen() passed " << std::endl;
@@ -36,10 +41,9 @@ namespace camel {
                 std::string publicKey = "3059301306072a8648ce3d020106082a811ccf5501822d03420004d016f02e97d8acf842d41e6c322f3450c56cb569ceb59eea89e292ff9d32a18a1e525f8513b184b0d3fb5537be258fb3df3f060e67698475c3a462791c0f7e7b";
 
                 SM2PublicKeyEncryptor encryptor(publicKey, "hex", "");
-                std::cout << encryptor.encryptToBase64(plainText) << std::endl;
-                std::string encrypt64Data = encryptor.encryptToBase64(plainText);
 
-                std::cout << "encryptor ANS1 result" << std::endl;
+                std::cout << "------------ SM2 encrypt check1  ------------" << std::endl;
+                std::string encrypt64Data = encryptor.encryptToBase64(plainText);
                 std::cout << encrypt64Data << std::endl;
 
                 SM2PrivateKeyDecryptor decryptor(privateKey, "hex", "");
@@ -47,12 +51,10 @@ namespace camel {
 
                 passed = passed && plainText == decryptor.decryptFromBase64(encrypt64Data);
 
-                std::string encryptData2 = "BMDU0eJgZrT7J+pLXciJriSMe7/mSW24DshtszYifzc5krY6b3tW+xqRjo76maa76iF6fwcl4ErBhCWyZF5KFWY0RZ+1+BGIZ0lwDwfCaP8rSl6qEgYmOOu/ctyDYFkyzLuYnhtK6tP7P8souhqr3g==";
+                std::string java_encrypt_base64 = "BMDU0eJgZrT7J+pLXciJriSMe7/mSW24DshtszYifzc5krY6b3tW+xqRjo76maa76iF6fwcl4ErBhCWyZF5KFWY0RZ+1+BGIZ0lwDwfCaP8rSl6qEgYmOOu/ctyDYFkyzLuYnhtK6tP7P8souhqr3g==";
 
-
-                std::cout << "decryptor java C1C2C3 result" << std::endl;
-                //std::cout << decryptor.decryptFromBase64(encryptData2) << std::endl;
-                //passed = passed && plainText == decryptor.decryptFromBase64(encryptData2);
+                std::cout << decryptor.decryptFromBase64(java_encrypt_base64) << std::endl;
+                passed = passed && plainText == decryptor.decryptFromBase64(java_encrypt_base64);
 
 
             }
@@ -62,11 +64,10 @@ namespace camel {
                 std::string privateKey = "308193020100301306072a8648ce3d020106082a811ccf5501822d047930770201010420837d4f5612081b224a0979b0a8de5553bbbdb11f2fb275a9be6d405d7c03dc91a00a06082a811ccf5501822da14403420004d016f02e97d8acf842d41e6c322f3450c56cb569ceb59eea89e292ff9d32a18a1e525f8513b184b0d3fb5537be258fb3df3f060e67698475c3a462791c0f7e7b";
                 std::string publicKey = "3059301306072a8648ce3d020106082a811ccf5501822d03420004d016f02e97d8acf842d41e6c322f3450c56cb569ceb59eea89e292ff9d32a18a1e525f8513b184b0d3fb5537be258fb3df3f060e67698475c3a462791c0f7e7b";
 
+                std::cout << "------------ SM2 encrypt check2  ------------" << std::endl;
                 SM2PublicKeyEncryptor encryptor(publicKey, "hex", dataModeFlag);
-                std::cout << encryptor.encryptToBase64(plainText) << std::endl;
-                std::string encrypt64Data = encryptor.encryptToBase64(plainText);
 
-                std::cout << "encryptor result " << dataModeFlag << std::endl;
+                std::string encrypt64Data = encryptor.encryptToBase64(plainText);
                 std::cout << encrypt64Data << std::endl;
 
                 SM2PrivateKeyDecryptor decryptor(privateKey, "hex", dataModeFlag);
@@ -80,16 +81,15 @@ namespace camel {
                 std::string privateKey = "308193020100301306072a8648ce3d020106082a811ccf5501822d047930770201010420837d4f5612081b224a0979b0a8de5553bbbdb11f2fb275a9be6d405d7c03dc91a00a06082a811ccf5501822da14403420004d016f02e97d8acf842d41e6c322f3450c56cb569ceb59eea89e292ff9d32a18a1e525f8513b184b0d3fb5537be258fb3df3f060e67698475c3a462791c0f7e7b";
                 std::string publicKey = "3059301306072a8648ce3d020106082a811ccf5501822d03420004d016f02e97d8acf842d41e6c322f3450c56cb569ceb59eea89e292ff9d32a18a1e525f8513b184b0d3fb5537be258fb3df3f060e67698475c3a462791c0f7e7b";
 
-                SM2PublicKeyEncryptor encryptor(publicKey, "hex", dataModeFlag);
-                std::cout << encryptor.encryptToBase64(plainText) << std::endl;
-                std::string encrypt64Data = encryptor.encryptToBase64(plainText);
+                std::cout << "------------ SM2 encrypt check3  ------------" << std::endl;
 
-                std::cout << "encryptor result " << dataModeFlag << std::endl;
-                std::cout << encrypt64Data << std::endl;
+                 SM2PublicKeyEncryptor encryptor(publicKey, "hex", dataModeFlag);
+                 std::string encrypt64Data = encryptor.encryptToBase64(plainText);
+                 std::cout << encrypt64Data << std::endl;
 
-                SM2PrivateKeyDecryptor decryptor(privateKey, "hex", dataModeFlag);
-                std::cout << decryptor.decryptFromBase64(encrypt64Data) << std::endl;
-                passed = passed && plainText == decryptor.decryptFromBase64(encrypt64Data);
+                 SM2PrivateKeyDecryptor decryptor(privateKey, "hex", dataModeFlag);
+                 std::cout << decryptor.decryptFromBase64(encrypt64Data) << std::endl;
+                 passed = passed && plainText == decryptor.decryptFromBase64(encrypt64Data);
 
             }
             if (passed) {
@@ -111,13 +111,30 @@ namespace camel {
 
                 SM2PrivateKeySigner signer(privateKey, "hex", "");
                 SM2PublicKeyVerifier verifier(publicKey, "hex", "");
-                std::cout << "------------ SM2 sign result ------------" << std::endl;
+                std::cout << "------------ SM2 sign check1  ------------" << std::endl;
                 std::cout << signer.signToBase64(plainText) << std::endl;
                 passed = passed && verifier.verifySign(signer.signToBase64(plainText), plainText);
 
                 std::string java_sign_hex = "304402203cf3cb54260d4476c5759c1e2189a6e767bb0e642ffb5610d2e7fc1c0585046502207cc8703f150dea4739e5823e5e004226f268acaf480ec4c061da9bc75fa17a16";
 
                 passed = passed && verifier.verifyHexSign(java_sign_hex, plainText);
+
+            }
+            {
+                std::string plainText = "hello world sm2";
+
+                std::string privateKey = "MIGHAgEAMBMGByqGSM49AgEGCCqBHM9VAYItBG0wawIBAQQgTKwFtNzANfbXyLjMZsfQVKdRJniH29LrYlsMPpP4JQGhRANCAASfROCTf3PbQ4sHNMwOAyMUYrQ5hGdXQWcy9Gp4qjF/77XgiAVq8jUNk/7+YeH/fLf7epFX63qNDEy1HcuPSV9l";
+                std::string publicKey = "MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEn0Tgk39z20OLBzTMDgMjFGK0OYRnV0FnMvRqeKoxf++14IgFavI1DZP+/mHh/3y3+3qRV+t6jQxMtR3Lj0lfZQ==";
+
+                SM2PrivateKeySigner signer(privateKey, "base64", "");
+                SM2PublicKeyVerifier verifier(publicKey, "base64", "");
+                std::cout << "------------ SM2 sign check2  ------------" << std::endl;
+                std::cout << signer.signToBase64(plainText) << std::endl;
+                passed = passed && verifier.verifySign(signer.signToBase64(plainText), plainText);
+
+                std::string java_sign_base64 = "MEQCIBp4BAnkh6Hi9DktitNwhyVLw7VfLPEy0P6RibyTT+ykAiBA5ze0xkbfPM+D3Op2zDksNZrmUx6SSVuV/BN+QRXHDQ==";
+
+                passed = passed && verifier.verifyBase64Sign(java_sign_base64, plainText);
 
             }
             if (passed) {

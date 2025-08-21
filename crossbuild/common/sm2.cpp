@@ -914,10 +914,6 @@ namespace camel {
 
         //SM3withSM2 目前只支持一种SM3
         bool configSM2SignParams(EVP_MD_CTX* ctx,  EVP_PKEY* key, const std::string& sm2UserId) {
-            if (key == nullptr || EVP_PKEY_id(key) != EVP_PKEY_SM2) {
-                std::cerr << "configSM2SignParams invalid SM2 key type" << std::endl;
-                return false;
-            }
             std::string signHash = "SM3"; // SM3withSM2对应的hash名字为 SM3
             OSSL_PARAM params[] = {
                 OSSL_PARAM_END
@@ -943,10 +939,6 @@ namespace camel {
         }
 
          bool configSM2VerifyParams(EVP_MD_CTX* ctx,  EVP_PKEY* key, const std::string& sm2UserId) {
-            if (key == nullptr || EVP_PKEY_id(key) != EVP_PKEY_SM2) {
-                std::cerr << "configSM2VerifyParams invalid SM2 key type" << std::endl;
-                return false;
-            }
            std::string signHash = "SM3"; // SM3withSM2对应的hash名字为 SM3
             OSSL_PARAM params[] = {
                 OSSL_PARAM_END
