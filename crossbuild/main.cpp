@@ -55,7 +55,8 @@ void runAllDemos() {
    // testEcKeyGen();
    // testEcKeyEncrypt();
 
-    testChaCha20KeyGen();
+    //testChaCha20KeyGen();
+    testSM2KeySigner();
 
 }
 

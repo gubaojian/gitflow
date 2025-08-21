@@ -906,3 +906,211 @@ namespace camel {
         }
     }
 }
+
+
+namespace camel {
+    namespace crypto {
+        const std::string defaultSM2UserId = "1234567812345678";
+
+        //SM3withSM2 目前只支持一种SM3
+        bool configSM2SignParams(EVP_MD_CTX* ctx,  EVP_PKEY* key, const std::string& sm2UserId) {
+            if (key == nullptr || EVP_PKEY_id(key) != EVP_PKEY_SM2) {
+                std::cerr << "configSM2SignParams invalid SM2 key type" << std::endl;
+                return false;
+            }
+            std::string signHash = "SM3"; // SM3withSM2对应的hash名字为 SM3
+            OSSL_PARAM params[] = {
+                OSSL_PARAM_END
+            };
+            if (EVP_DigestSignInit_ex(ctx, NULL, signHash.data(), nullptr, nullptr,
+                            key, params) == 0) {
+                std::cerr << "configSM2SignParams Failed to EVP_DigestSignInit_ex " << std::endl;
+                printOpenSSLError();
+                return false;
+            }
+            {//设置SM2的userId，默认
+                std::string signUserId = defaultSM2UserId;
+                if (!sm2UserId.empty()) {
+                    signUserId = sm2UserId;
+                }
+
+                if (EVP_PKEY_CTX_set1_id(EVP_MD_CTX_get_pkey_ctx(ctx), signUserId.data(), signUserId.size()) != 1) {
+                    printOpenSSLError();
+                    return false;
+                }
+            }
+            return true;
+        }
+
+         bool configSM2VerifyParams(EVP_MD_CTX* ctx,  EVP_PKEY* key, const std::string& sm2UserId) {
+            if (key == nullptr || EVP_PKEY_id(key) != EVP_PKEY_SM2) {
+                std::cerr << "configSM2VerifyParams invalid SM2 key type" << std::endl;
+                return false;
+            }
+           std::string signHash = "SM3"; // SM3withSM2对应的hash名字为 SM3
+            OSSL_PARAM params[] = {
+                OSSL_PARAM_END
+            };
+            if (EVP_DigestVerifyInit_ex(ctx, NULL, signHash.data(), nullptr, nullptr,
+                            key, params) == 0) {
+                std::cerr << "configSM2VerifyParams Failed to EVP_DigestVerifyInit_ex " << std::endl;
+                printOpenSSLError();
+                return false;
+            }
+            {//设置SM2的userId，默认
+               std::string signUserId = defaultSM2UserId;
+               if (!sm2UserId.empty()) {
+                   signUserId = sm2UserId;
+               }
+               if (EVP_PKEY_CTX_set1_id(EVP_MD_CTX_get_pkey_ctx(ctx), signUserId.data(), signUserId.size()) != 1) {
+                   printOpenSSLError();
+                   return false;
+               }
+            }
+            return true;
+        }
+
+    }
+}
+
+namespace camel {
+    namespace crypto {
+        SM2PrivateKeySigner::SM2PrivateKeySigner(const std::string_view& privateKey,
+                  const std::string_view& format,
+                  const std::string_view& sm2UserId) {
+            this->sm2UserId = sm2UserId;
+            this->format = format;
+            this->privateKey = privateKey;
+            this->externalEvpKey = nullptr;
+        }
+
+
+        std::string SM2PrivateKeySigner::sign(const std::string_view &plainText) const {
+            if (plainText.empty()) {
+                return "";
+            }
+
+            EVP_PKEY* evpKey = externalEvpKey;
+            if (evpKey == nullptr) {
+                evpKey = SM2PrivateKeyFrom(privateKey, format);
+            }
+            if (evpKey == nullptr) {
+                std::cerr << "SM2PrivateKeySigner::sign() Failed to create EVP_PKEY " << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            SM2EvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
+
+            EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+            if (ctx == nullptr) {
+                std::cerr << "SM2PrivateKeySigner::sign() Failed to create EVP_MD_CTX_new() " << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            if (!configSM2SignParams(ctx, evpKey, sm2UserId)) {
+                EVP_MD_CTX_free(ctx);
+                return "";
+            }
+            if (EVP_DigestSignUpdate(ctx, plainText.data(), plainText.size()) == 0) {
+                std::cerr << "SM2PrivateKeySigner::sign() Failed to EVP_DigestSignUpdate " << std::endl;
+                printOpenSSLError();
+                EVP_MD_CTX_free(ctx);
+                return "";
+            }
+
+            std::string buffer;
+            buffer.resize(std::max(EVP_MAX_MD_SIZE*2, 512));
+            unsigned char *out = (unsigned char*) buffer.data();
+            size_t outlen =  buffer.size();
+            if (EVP_DigestSignFinal(ctx, out, &outlen) == 0) {
+                std::cerr << "SM2PrivateKeySigner::sign() Failed to EVP_DigestSignFinal " << std::endl;
+                printOpenSSLError();
+                EVP_MD_CTX_free(ctx);
+                return "";
+            }
+            EVP_MD_CTX_free(ctx);
+            buffer.resize(outlen);
+
+            return buffer;
+        }
+
+        std::string SM2PrivateKeySigner::signToHex(const std::string_view &plainText) const {
+            return hex_encode(sign(plainText));
+        }
+
+        std::string SM2PrivateKeySigner::signToBase64(const std::string_view &plainText) const {
+            return base64_encode(sign(plainText));
+        }
+    }
+}
+
+
+namespace camel {
+    namespace crypto {
+        SM2PublicKeyVerifier::SM2PublicKeyVerifier(const std::string_view& publicKey,
+                  const std::string_view& format,
+                  const std::string_view& sm2UserId) {
+            this->sm2UserId = sm2UserId;
+            this->format = format;
+            this->publicKey = publicKey;
+        }
+
+
+        bool SM2PublicKeyVerifier::verifySign(const std::string_view &sign, const std::string_view &data) const {
+            if (sign.empty()
+                || data.empty()) {
+                return false;
+            }
+
+            EVP_PKEY* evpKey = externalEvpKey;
+            if (evpKey == nullptr) {
+                evpKey = SM2PublicKeyFrom(publicKey, format);
+            }
+            if (evpKey == nullptr) {
+                std::cerr << "SM2PublicKeyVerifier::verifySign() Failed to create EVP_PKEY " << std::endl;
+                printOpenSSLError();
+                return false;
+            }
+            SM2EvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
+
+            EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+            if (ctx == nullptr) {
+                std::cerr << "SM2PublicKeyVerifier::verifySign() Failed to create EVP_MD_CTX_new() " << std::endl;
+                printOpenSSLError();
+                return false;
+            }
+            if (!configSM2VerifyParams(ctx, evpKey, sm2UserId)) {
+                EVP_MD_CTX_free(ctx);
+                return false;
+            }
+            if (EVP_DigestVerifyUpdate(ctx, data.data(), data.size()) == 0) {
+                std::cerr << "SM2PublicKeyVerifier::verifySign() Failed to EVP_DigestVerifyUpdate " << std::endl;
+                printOpenSSLError();
+                EVP_MD_CTX_free(ctx);
+                return false;
+            }
+
+            unsigned char *signData = (unsigned char*) sign.data();
+            if (EVP_DigestVerifyFinal(ctx, signData, sign.size()) == 0) {
+                std::cerr << "SM2PublicKeyVerifier::verifySign() Failed to EVP_DigestVerifyFinal " << std::endl;
+                printOpenSSLError();
+                EVP_MD_CTX_free(ctx);
+                return false;
+            }
+            EVP_MD_CTX_free(ctx);
+            return true;
+        }
+
+        bool SM2PublicKeyVerifier::verifyHexSign(const std::string_view &hexSign, const std::string_view &data) const {
+            std::string sign = hex_decode(hexSign);
+            return verifySign(sign, data);
+        }
+
+
+        bool SM2PublicKeyVerifier::verifyBase64Sign(const std::string_view &base64Sign, const std::string_view &data) const {
+            std::string sign = base64_decode_url_safe(base64Sign);
+            return verifySign(sign, data);
+        }
+
+    }
+}

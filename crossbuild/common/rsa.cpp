@@ -565,7 +565,7 @@ namespace camel {
             return algorithm.find(target) != std::string::npos;
         }
 
-        bool configSignParams(EVP_MD_CTX* ctx,  EVP_PKEY* key, const std::string& algorithm) {
+        bool configRsaSignParams(EVP_MD_CTX* ctx,  EVP_PKEY* key, const std::string& algorithm) {
             std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_PKCS1;
             std::string signHash = OSSL_DIGEST_NAME_SHA2_256;
 
@@ -606,7 +606,7 @@ namespace camel {
             return true;
         }
 
-         bool configVerifyParams(EVP_MD_CTX* ctx,  EVP_PKEY* key, const std::string& algorithm) {
+         bool configRsaVerifyParams(EVP_MD_CTX* ctx,  EVP_PKEY* key, const std::string& algorithm) {
             std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_PKCS1;
             std::string signHash = OSSL_DIGEST_NAME_SHA2_256;
 
@@ -1084,7 +1084,7 @@ namespace camel {
                 printOpenSSLError();
                 return "";
             }
-            if (!configSignParams(ctx, evpKey, algorithm)) {
+            if (!configRsaSignParams(ctx, evpKey, algorithm)) {
                 EVP_MD_CTX_free(ctx);
                 return "";
             }
@@ -1153,16 +1153,16 @@ namespace camel {
 
             EVP_MD_CTX* ctx = EVP_MD_CTX_new();
             if (ctx == nullptr) {
-                std::cerr << "RSAPrivateKeyVerifier::verifySign() Failed to create EVP_MD_CTX_new() " << std::endl;
+                std::cerr << "RSAPublicKeyVerifier::verifySign() Failed to create EVP_MD_CTX_new() " << std::endl;
                 printOpenSSLError();
                 return false;
             }
-            if (!configVerifyParams(ctx, evpKey, algorithm)) {
+            if (!configRsaVerifyParams(ctx, evpKey, algorithm)) {
                 EVP_MD_CTX_free(ctx);
                 return false;
             }
             if (EVP_DigestVerifyUpdate(ctx, data.data(), data.size()) == 0) {
-                std::cerr << "RSAPrivateKeyVerifier::verifySign() Failed to EVP_DigestVerifyUpdate " << std::endl;
+                std::cerr << "RSAPublicKeyVerifier::verifySign() Failed to EVP_DigestVerifyUpdate " << std::endl;
                 printOpenSSLError();
                 EVP_MD_CTX_free(ctx);
                 return false;
@@ -1170,7 +1170,7 @@ namespace camel {
 
             unsigned char *signData = (unsigned char*) sign.data();
             if (EVP_DigestVerifyFinal(ctx, signData, sign.size()) == 0) {
-                std::cerr << "RSAPrivateKeyVerifier::verifySign() Failed to EVP_DigestVerifyFinal " << std::endl;
+                std::cerr << "RSAPublicKeyVerifier::verifySign() Failed to EVP_DigestVerifyFinal " << std::endl;
                 printOpenSSLError();
                 EVP_MD_CTX_free(ctx);
                 return false;

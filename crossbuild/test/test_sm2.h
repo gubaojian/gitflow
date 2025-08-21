@@ -10,6 +10,7 @@ namespace camel {
     namespace crypto {
         void testSM2KeyGen();
         void testSM2KeyEncrypt();
+        void testSM2KeySigner();
     }
 }
 

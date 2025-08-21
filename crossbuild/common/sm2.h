@@ -157,4 +157,86 @@ namespace camel {
     }
 }
 
+namespace camel {
+    namespace crypto {
+        class SM2PrivateKeySigner {
+        public:
+            /** SM3withSM2 签名，目前默认这种算法。
+              * format = "pem", "hex", "base64", "der"
+              * sm2UserId 1234567812345678
+               */
+            explicit SM2PrivateKeySigner(const std::string_view& publicKey,
+                  const std::string_view& format = "pem",
+                  const std::string_view& sm2UserId = "1234567812345678");
+            ~SM2PrivateKeySigner() = default;
+        public:
+            SM2PrivateKeySigner(const SM2PrivateKeySigner&) = delete;
+            SM2PrivateKeySigner& operator=(const SM2PrivateKeySigner&) = delete;
+        public:
+            std::string sign(const std::string_view& plainText) const;
+            std::string signToBase64(const std::string_view& plainText) const;
+            std::string signToHex(const std::string_view& plainText) const;
+        public:
+            /**
+             * 外部提供的EVP_PKEY指针，如果指定则不再加载默认秘钥.不指定则，加载默认秘钥
+             *  外部自己负责释放，管理EVP_PKEY生命周期，用于复用EVP_PKEY秘钥，避免重复加载，高性能等场景
+             * @param pkey
+             */
+            void setExternalEvpKey(EVP_PKEY* pkey) {
+                this->externalEvpKey = pkey;
+            }
+            //设置签名的userId
+            void setSM2UserId(const std::string_view& userId) {
+                this->sm2UserId = userId;
+            }
+        private:
+            std::string privateKey;
+            std::string format;
+            std::string sm2UserId; // UTF-8编码的userId, 长度小于8192字节
+        private:
+            EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
+        };
+    }
+}
+
+
+namespace camel {
+    namespace crypto {
+         class SM2PublicKeyVerifier{
+        public:
+             /** SM3withSM2 签名，目前默认这种算法。
+               * format = "pem", "hex", "base64", "der"
+               * sm2UserId 1234567812345678
+                */
+            explicit SM2PublicKeyVerifier(const std::string_view& publicKey,
+                  const std::string_view& format = "pem",
+                  const std::string_view& sm2UserId = "1234567812345678");
+            ~SM2PublicKeyVerifier() = default;
+        public:
+             bool verifySign(const std::string_view& sign, const std::string_view& data) const;
+             bool verifyHexSign(const std::string_view& hexSign, const std::string_view& data) const;
+             bool verifyBase64Sign(const std::string_view& base64Sign, const std::string_view& data) const;
+        public:
+            /**
+             * 外部提供的EVP_PKEY指针，如果指定则不再加载默认秘钥.不指定则，加载默认秘钥
+             *  外部自己负责释放，管理EVP_PKEY生命周期，用于复用EVP_PKEY秘钥，避免重复加载，高性能等场景
+             * @param pkey
+             */
+            void setExternalEvpKey(EVP_PKEY* pkey) {
+                this->externalEvpKey = pkey;
+            }
+             void setSM2UserId(const std::string_view& userId) {
+                this->sm2UserId = userId;
+            }
+        private:
+            std::string publicKey;
+            std::string format;
+            std::string sm2UserId; // UTF-8编码的userId, 长度小于8192字节
+        private:
+            EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
+        };
+        
+    }
+}
+
 #endif //CAMEL_SM2_H

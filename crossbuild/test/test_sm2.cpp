@@ -99,5 +99,32 @@ namespace camel {
             }
 
         }
+
+        void testSM2KeySigner() {
+            bool passed = true;
+            {
+                std::string plainText = "hello world sm2";
+
+                std::string privateKey = "308193020100301306072a8648ce3d020106082a811ccf5501822d047930770201010420ae56db268e4062dde776894bab0aa2782ddbafc9ee4cbe9d12bbf38aa5e2aa95a00a06082a811ccf5501822da14403420004059626c6d2514767f90763d79583a1d9387f219e438b23ee991d6e1c854a02af1a1963d968cb979e4a5f3b46f958208b15bb96354de976dc67e87d386edb1bb4";
+
+                std::string publicKey = "3059301306072a8648ce3d020106082a811ccf5501822d03420004059626c6d2514767f90763d79583a1d9387f219e438b23ee991d6e1c854a02af1a1963d968cb979e4a5f3b46f958208b15bb96354de976dc67e87d386edb1bb4";
+
+                SM2PrivateKeySigner signer(privateKey, "hex", "");
+                SM2PublicKeyVerifier verifier(publicKey, "hex", "");
+                std::cout << "------------ SM2 sign result ------------" << std::endl;
+                std::cout << signer.signToBase64(plainText) << std::endl;
+                passed = passed && verifier.verifySign(signer.signToBase64(plainText), plainText);
+
+                std::string java_sign_hex = "304402203cf3cb54260d4476c5759c1e2189a6e767bb0e642ffb5610d2e7fc1c0585046502207cc8703f150dea4739e5823e5e004226f268acaf480ec4c061da9bc75fa17a16";
+
+                passed = passed && verifier.verifyHexSign(java_sign_hex, plainText);
+
+            }
+            if (passed) {
+                std::cout << "testSM2KeySigner() passed " << std::endl;
+            } else {
+                std::cout << "testSM2KeySigner() failed " << std::endl;
+            }
+        }
     }
 }

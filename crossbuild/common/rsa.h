@@ -192,7 +192,7 @@ namespace camel {
             EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
         };
 
-        class RSAPublicKeyVerifier{
+        class RSAPublicKeyVerifier {
         public:
             /**
               * format = "pem", "hex", "base64", "der"
