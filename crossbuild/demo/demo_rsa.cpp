@@ -39,20 +39,20 @@ namespace camel {
             RSAPrivateKeyDecryptor decryptorBase64(rsa.getBase64NewLinePrivateKey(), "base64");
             {
                 std::string plainText = "hello world";
-                std::cout <<"short text demo " << std::endl;
+                std::cout <<"-------------  RSA encrypt short text demo ------------- " << std::endl;
                 std::string encryptedTextPem = encryptorPem.encrypt(plainText);
                 std::string encryptedTextDer = encryptorDer.encrypt(plainText);
                 std::string encryptedTextHex = encryptorHex.encrypt(plainText);
                 std::string encryptedTextBase64 = encryptorBase64.encrypt(plainText);
                 std::cout << encryptorPem.encryptToHex(plainText) << std::endl;
                 std::cout << encryptorPem.encryptToBase64(plainText) << std::endl;
-                std::cout << "pem result test result" << std::endl;
+                std::cout << "-------------  RSA  encrypt pem result test result ------------- " << std::endl;
                 std::cout << decryptorPem.decrypt(encryptedTextPem) << std::endl;
                 std::cout << decryptorDer.decrypt(encryptedTextPem) << std::endl;
                 std::cout << decryptorHex.decrypt(encryptedTextPem) << std::endl;
                 std::cout << decryptorBase64.decrypt(encryptedTextPem) << std::endl;
 
-                std::cout << "der result test result" << std::endl;
+                std::cout << "-------------  RSA  encrypt der result test result ------------- " << std::endl;
                 std::cout << decryptorPem.decrypt(encryptedTextDer) << std::endl;
                 std::cout << decryptorDer.decrypt(encryptedTextDer) << std::endl;
                 std::cout << decryptorHex.decrypt(encryptedTextDer) << std::endl;
@@ -65,7 +65,7 @@ namespace camel {
                     longPlainText.append(std::to_string(i));
                     longPlainText.append("_");
                 }
-                std::cout <<"long text demo " << std::endl;
+                std::cout <<"-------------  RSA  encrypt long text demo ------------- " << std::endl;
                 std::string encryptedText = encryptorPem.encrypt(longPlainText);
                 std::cout << encryptorPem.encryptToHex(longPlainText) << std::endl;
                 std::cout << encryptorPem.encryptToBase64(longPlainText) << std::endl;
@@ -231,7 +231,7 @@ namespace camel {
                 RSAPrivateKeySigner signer(privateKey, "base64");
                 RSAPrivateKeySigner signerPss(privateKey, "base64", "SHA256withRSA/PSS");
 
-                std::cout << "demoRsaSign() " << std::endl;
+                std::cout << "------------------ demoRsaSign() ------------------ " << std::endl;
 
                 std::cout << signer.signToBase64(plainText) << std::endl;
                 std::cout << signerPss.signToBase64(plainText) << std::endl;
@@ -239,7 +239,7 @@ namespace camel {
                 RSAPublicKeyVerifier verifier(publicKey, "base64");
                 RSAPublicKeyVerifier verifierPss(publicKey, "base64", "SHA256withRSA/PSS");
 
-                std::cout << "demoRsaSign() verify "
+                std::cout << "------------------ demoRsaSign() verify ------------------ "
                 <<  verifier.verifyBase64Sign(sign, plainText)
                 <<  " PSS VERIFY "
                 << verifierPss.verifyBase64Sign(signerPss.signToBase64(plainText), plainText)

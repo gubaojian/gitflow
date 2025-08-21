@@ -28,17 +28,20 @@
 using namespace camel::crypto;
 
 void runAllTests() {
+    testHex();
+    testBase64();
     testRsaGenerateKey();
     testRsaWithJava();
     testRsaSign();
-    testHex();
-    testBase64();
     testHmac();
     testDigest();
     //testEcKeyGen();
     testSM2KeyGen();
     testSM2KeyEncrypt();
     testSM2KeySigner();
+
+    testChaCha20KeyGen();
+    testChaCha20KeyEncrypt();
 }
 
 void runAllDemos() {
@@ -56,7 +59,7 @@ void runAllDemos() {
    // testEcKeyGen();
    // testEcKeyEncrypt();
 
-    //testChaCha20KeyGen();
+
 
 
 }
