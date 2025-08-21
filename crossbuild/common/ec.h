@@ -105,4 +105,37 @@ namespace camel {
 }
 
 
+namespace camel {
+    namespace crypto {
+
+        class ECDHSharedSecretGenerator {
+            public:
+                explicit ECDHSharedSecretGenerator(const std::string_view& localPrivateKey, const std::string_view& remotePublicKey,
+                    const std::string_view& format);
+            ~ECDHSharedSecretGenerator() = default;
+            public:
+                const std::string getGenSecret();
+                const std::string getGenSecretHex();
+                const std::string getGenSecretBase64();
+            private:
+                 std::string genSecret;
+        };
+
+        class HKDFSecretGenerator {
+            public:
+            explicit HKDFSecretGenerator(const std::string_view& secret,
+                const std::string_view& infoKey,
+                const std::string_view& salt, const std::string_view& hashName = "SHA2-256");
+            ~HKDFSecretGenerator() = default;
+            public:
+                const std::string getGenSecret();
+                const std::string getGenSecretHex();
+                const std::string getGenSecretBase64();
+            private:
+                std::string genSecret;
+        };
+
+    }
+}
+
 #endif //CAMEL_ELLIPTIC_CURVE_H
