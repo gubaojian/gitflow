@@ -148,7 +148,6 @@ namespace camel {
             return base64_encode(digest(data));
         }
 
-
     }
 }
 

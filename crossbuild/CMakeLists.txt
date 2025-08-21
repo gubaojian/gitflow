@@ -54,6 +54,12 @@ add_executable(crossbuild main.cpp
         common/ec.cpp
         common/ec.h
         common/file_utils.h
+        common/chacha20.cpp
+        common/chacha20.h
+        common/sm4.cpp
+        common/sm4.h
+        common/sm2.cpp
+        common/sm2.h
         test/test_base64.cpp
         test/test_base64.h
         test/test_hex.cpp
@@ -78,12 +84,9 @@ add_executable(crossbuild main.cpp
         test/hmac_sha_256_signer.h
         test/test_ec.cpp
         test/test_ec.h
-        common/sm2.cpp
-        common/sm2.h
         test/test_sm2.cpp
         test/test_sm2.h
-        common/chacha20.cpp
-        common/chacha20.h
+
         test/test_chacha20.cpp
         test/test_chacha20.h
 )
@@ -99,6 +102,8 @@ set(ENCRYPT_SOURCE
     common/Encrypt.h
         common/ec.cpp
         common/ec.h
+        common/sm4.cpp
+        common/sm4.h
 )
 
 set(JNI_SOURCE
