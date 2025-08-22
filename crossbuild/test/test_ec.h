@@ -12,6 +12,7 @@ namespace camel {
         void testEcDHKeyGen();
         void testHKDFKeyGen();
         void testECDSASigner();
+        void testEDDSASigner();
         void testEcKeyEncrypt();
     }
 }

@@ -935,6 +935,7 @@ namespace camel {
             this->algorithm = algorithm;
             this->format = format;
             this->publicKey = publicKey;
+            this->externalEvpKey = nullptr;
         }
 
 
@@ -990,6 +991,170 @@ namespace camel {
 
 
         bool ECDSAPublicKeyVerifier::verifyBase64Sign(const std::string_view &base64Sign, const std::string_view &data) const {
+            std::string sign = base64_decode_url_safe(base64Sign);
+            return verifySign(sign, data);
+        }
+
+    }
+}
+
+
+namespace camel {
+    namespace crypto {
+        bool configEDDSASignParams(EVP_MD_CTX* ctx,  EVP_PKEY* key) {
+            OSSL_PARAM params[] = {
+                OSSL_PARAM_END
+            };
+            // Notice that the digest name must NOT be used.
+            if (EVP_DigestSignInit_ex(ctx, NULL, NULL, nullptr, nullptr,
+                            key, params) == 0) {
+                printOpenSSLError();
+                return false;
+            }
+            return true;
+        }
+
+         bool configEDDSAVerifyParams(EVP_MD_CTX* ctx,  EVP_PKEY* key) {
+            OSSL_PARAM params[] = {
+                OSSL_PARAM_END
+            };
+            // Notice that the digest name must NOT be used.
+            if (EVP_DigestVerifyInit_ex(ctx, NULL, NULL, nullptr, nullptr,
+                            key, params) == 0) {
+                printOpenSSLError();
+                return false;
+            }
+            return true;
+        }
+    }
+}
+
+
+namespace camel {
+    namespace crypto {
+        EDDSAPrivateKeySigner::EDDSAPrivateKeySigner(const std::string_view& privateKey,
+                  const std::string_view& format) {
+            this->format = format;
+            this->privateKey = privateKey;
+            this->externalEvpKey = nullptr;
+        }
+
+
+        std::string EDDSAPrivateKeySigner::sign(const std::string_view &plainText) const {
+            if (plainText.empty()) {
+                return "";
+            }
+
+            EVP_PKEY* evpKey = externalEvpKey;
+            if (evpKey == nullptr) {
+                evpKey = ECPrivateKeyFrom(privateKey, format);
+            }
+            if (evpKey == nullptr) {
+                std::cerr << "EDDSAPrivateKeySigner::sign() Failed to create EVP_PKEY " << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            ECEvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
+
+            EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+            if (ctx == nullptr) {
+                std::cerr << "EDDSAPrivateKeySigner::sign() Failed to create EVP_MD_CTX_new() " << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            if (!configEDDSASignParams(ctx, evpKey)) {
+                EVP_MD_CTX_free(ctx);
+                return "";
+            }
+
+
+            std::string buffer;
+            buffer.resize(1024); // 目前secp521r1, 最大 150字节以内
+            unsigned char *out = (unsigned char*) buffer.data();
+            size_t outlen =  buffer.size();
+            const unsigned char *tbs = ( const unsigned char *) plainText.data();
+            if (EVP_DigestSign(ctx, out, &outlen , tbs, plainText.size()) == 0) {
+                std::cerr << "EDDSAPrivateKeySigner::sign() Failed to EVP_DigestSign " << std::endl;
+                printOpenSSLError();
+                EVP_MD_CTX_free(ctx);
+                return "";
+            }
+            EVP_MD_CTX_free(ctx);
+            buffer.resize(outlen);
+
+            return buffer;
+        }
+
+        std::string EDDSAPrivateKeySigner::signToHex(const std::string_view &plainText) const {
+            return hex_encode(sign(plainText));
+        }
+
+        std::string EDDSAPrivateKeySigner::signToBase64(const std::string_view &plainText) const {
+            return base64_encode(sign(plainText));
+        }
+
+    }
+}
+
+
+
+namespace camel {
+    namespace crypto {
+        EDDSAPublicKeyVerifier::EDDSAPublicKeyVerifier(const std::string_view& publicKey,
+                  const std::string_view& format) {
+            this->format = format;
+            this->publicKey = publicKey;
+            this->externalEvpKey = nullptr;
+        }
+
+
+        bool EDDSAPublicKeyVerifier::verifySign(const std::string_view &sign, const std::string_view &data) const {
+            if (sign.empty()
+                || data.empty()) {
+                return false;
+            }
+
+            EVP_PKEY* evpKey = externalEvpKey;
+            if (evpKey == nullptr) {
+                evpKey = ECPublicKeyFrom(publicKey, format);
+            }
+            if (evpKey == nullptr) {
+                std::cerr << "EDDSAPrivateKeySigner::verifySign() Failed to create EVP_PKEY " << std::endl;
+                printOpenSSLError();
+                return false;
+            }
+            ECEvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
+
+            EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+            if (ctx == nullptr) {
+                std::cerr << "EDDSAPrivateKeySigner::verifySign() Failed to create EVP_MD_CTX_new() " << std::endl;
+                printOpenSSLError();
+                return false;
+            }
+            if (!configEDDSAVerifyParams(ctx, evpKey)) {
+                EVP_MD_CTX_free(ctx);
+                return false;
+            }
+            const unsigned char *check_sign = (const unsigned char *)sign.data();
+            const unsigned char *tbs = ( const unsigned char *) data.data();
+            if (EVP_DigestVerify(ctx, check_sign, sign.size(),
+                          tbs, data.size()) == 0) {
+                std::cerr << "EDDSAPrivateKeySigner::verifySign() Failed to EVP_DigestVerify " << std::endl;
+                printOpenSSLError();
+                EVP_MD_CTX_free(ctx);
+                return false;
+            }
+            EVP_MD_CTX_free(ctx);
+            return true;
+        }
+
+        bool EDDSAPublicKeyVerifier::verifyHexSign(const std::string_view &hexSign, const std::string_view &data) const {
+            std::string sign = hex_decode(hexSign);
+            return verifySign(sign, data);
+        }
+
+
+        bool EDDSAPublicKeyVerifier::verifyBase64Sign(const std::string_view &base64Sign, const std::string_view &data) const {
             std::string sign = base64_decode_url_safe(base64Sign);
             return verifySign(sign, data);
         }

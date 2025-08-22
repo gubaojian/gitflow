@@ -173,7 +173,7 @@ namespace camel {
             {
                 //RFC 7539 Java等其它实现都是 标准12位 nonce iv
                 unsigned char* iv = (unsigned char* )combineBuffer.data();
-                //前4位默认位0
+                //前4位默认位0，生成12位iv，和Java 12位对应
                 std::memset(iv, 0, 4);
                 if (RAND_bytes(iv + 4, 12) != 1) {
                     std::cerr << "achaCha20_encrypt RAND_bytes() failed" << std::endl;

@@ -165,6 +165,8 @@ namespace camel {
         class ECDSAPrivateKeySigner {
             public:
                 /**
+                  *  支持的曲线： NIST 曲线：secp256r1（P-256）、secp384r1（P-384）、secp521r1（P-521）
+                  *   区块链常用：secp256k1
                   * format = "pem", "hex", "base64", "der"
                   * algorithm SHA1withECDSA HA224withECDSA SHA256withECDSA SHA384withECDSA  SHA512withECDSA
                   * SHA512/224withECDSA  SHA512/256withECDSA
@@ -206,6 +208,8 @@ namespace camel {
         class ECDSAPublicKeyVerifier {
         public:
             /**
+              *  支持的曲线： NIST 曲线：secp256r1（P-256）、secp384r1（P-384）、secp521r1（P-521）
+              *  区块链常用：secp256k1
               * format = "pem", "hex", "base64", "der"
               * algorithm
               * MD5withRSA SHA1withRSA SHA256withRSA SHA384withRSA SHA512withRSA
@@ -217,6 +221,9 @@ namespace camel {
                   const std::string_view& format = "pem",
                   const std::string_view& algorithm = "SHA256withRSA");
             ~ECDSAPublicKeyVerifier() = default;
+        public:
+            ECDSAPublicKeyVerifier(const ECDSAPublicKeyVerifier&) = delete;
+            ECDSAPublicKeyVerifier& operator=(const ECDSAPublicKeyVerifier&) = delete;
         public:
             bool verifySign(const std::string_view& sign, const std::string_view& data) const;
             bool verifyHexSign(const std::string_view& hexSign, const std::string_view& data) const;
@@ -234,6 +241,81 @@ namespace camel {
             std::string publicKey;
             std::string format;
             std::string algorithm;
+        private:
+            EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
+        };
+
+    }
+}
+
+
+namespace camel {
+    namespace crypto {
+        class EDDSAPrivateKeySigner {
+            public:
+              /**
+               *  支持的曲线： ED25519、ED448
+               * format = "pem", "hex", "base64", "der"
+                */
+                explicit EDDSAPrivateKeySigner(const std::string_view& privateKey,
+                      const std::string_view& format = "pem");
+                ~EDDSAPrivateKeySigner() = default;
+            public:
+                EDDSAPrivateKeySigner(const EDDSAPrivateKeySigner&) = delete;
+                EDDSAPrivateKeySigner& operator=(const EDDSAPrivateKeySigner&) = delete;
+            public:
+                std::string sign(const std::string_view& plainText) const;
+                std::string signToBase64(const std::string_view& plainText) const;
+                std::string signToHex(const std::string_view& plainText) const;
+            public:
+                /**
+                 * 外部提供的EVP_PKEY指针，如果指定则不再加载默认秘钥.不指定则，加载默认秘钥
+                 *  外部自己负责释放，管理EVP_PKEY生命周期，用于复用EVP_PKEY秘钥，避免重复加载，高性能等场景
+                 * @param pkey
+                 */
+                void setExternalEvpKey(EVP_PKEY* pkey) {
+                    this->externalEvpKey = pkey;
+                }
+            private:
+                std::string privateKey;
+                std::string format;
+            private:
+                EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
+        };
+    }
+}
+
+
+namespace camel {
+    namespace crypto {
+        class EDDSAPublicKeyVerifier {
+        public:
+            /**
+              *  支持的曲线： ED25519、ED448
+              * format = "pem", "hex", "base64", "der"
+               */
+            explicit EDDSAPublicKeyVerifier(const std::string_view& publicKey,
+                  const std::string_view& format = "pem");
+            ~EDDSAPublicKeyVerifier() = default;
+        public:
+            EDDSAPublicKeyVerifier(const EDDSAPublicKeyVerifier&) = delete;
+            EDDSAPublicKeyVerifier& operator=(const EDDSAPublicKeyVerifier&) = delete;
+        public:
+            bool verifySign(const std::string_view& sign, const std::string_view& data) const;
+            bool verifyHexSign(const std::string_view& hexSign, const std::string_view& data) const;
+            bool verifyBase64Sign(const std::string_view& base64Sign, const std::string_view& data) const;
+        public:
+            /**
+             * 外部提供的EVP_PKEY指针，如果指定则不再加载默认秘钥.不指定则，加载默认秘钥
+             *  外部自己负责释放，管理EVP_PKEY生命周期，用于复用EVP_PKEY秘钥，避免重复加载，高性能等场景
+             * @param pkey
+             */
+            void setExternalEvpKey(EVP_PKEY* pkey) {
+                this->externalEvpKey = pkey;
+            }
+        private:
+            std::string publicKey;
+            std::string format;
         private:
             EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
         };

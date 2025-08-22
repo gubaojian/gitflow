@@ -45,6 +45,8 @@ void runAllTests() {
     testEcKeyGen();
     testEcDHKeyGen();
     testHKDFKeyGen();
+    testECDSASigner();
+    testEDDSASigner();
 }
 
 void runAllDemos() {
@@ -62,7 +64,9 @@ void runAllDemos() {
    // testEcKeyGen();
    // testEcKeyEncrypt();
 
-    testECDSASigner();
+
+
+
 
 }
 

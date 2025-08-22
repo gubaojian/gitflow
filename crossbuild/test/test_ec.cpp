@@ -184,6 +184,10 @@ namespace camel {
                 std::cout << localECDHSharedSecretGenerator.getGenSecretBase64() << std::endl;
             }
 
+            /**
+             * Edwards 曲线	ed25519、ed448	高性能签名（SSH、容器）	EdDSA（非 ECDSA）
+             * Montgomery 曲线	x25519、x448	密钥交换（TLS、即时通讯）	ECDH（非签名）
+             */
             {
                 ECKeyPairGenerator localGenerator("x25519");
                 ECKeyPairGenerator remoteGenerator("x25519");
@@ -314,6 +318,60 @@ namespace camel {
                 std::cout << "testECDSASigner() passed " << std::endl;
             } else {
                 std::cout << "testECDSASigner() failed " << std::endl;
+            }
+        }
+
+        void testEDDSASigner() {
+             bool passed = true;
+             {
+                    ECKeyPairGenerator keyGenerator("ED25519");
+                    EDDSAPrivateKeySigner signer(keyGenerator.getBase64PrivateKey(), "base64");
+                    EDDSAPublicKeyVerifier verifier(keyGenerator.getBase64PublicKey(), "base64");
+
+                    std::string plainText = "hello world EDDSA";
+
+                    std::cout << "------------  EDDSAPrivateKeySigner EDDSAPublicKeyVerifier  check1  ------------" << std::endl;
+                    std::cout << signer.signToBase64(plainText) << std::endl;
+                    passed = passed && (verifier.verifyBase64Sign(signer.signToBase64(plainText), plainText));
+             }
+
+            {
+                 ECKeyPairGenerator keyGenerator("ED448");
+                 EDDSAPrivateKeySigner signer(keyGenerator.getBase64PrivateKey(), "base64");
+                 EDDSAPublicKeyVerifier verifier(keyGenerator.getBase64PublicKey(), "base64");
+
+                 std::string plainText = "hello world EDDSA";
+
+                 std::cout << "------------  EDDSAPrivateKeySigner EDDSAPublicKeyVerifier  check2  ------------" << std::endl;
+                 std::cout << signer.signToBase64(plainText) << std::endl;
+                 passed = passed && (verifier.verifyBase64Sign(signer.signToBase64(plainText), plainText));
+            }
+
+            {
+                 std::string publicKey ="MCowBQYDK2VwAyEATxVZB1YUejzyXW9ZbJl3h8S4UFW86mPdO98MV/nPADQ=";
+
+                 std::string privateKey = "MFECAQEwBQYDK2VwBCIEIIYveuplkJrQv9BNIuZAC3wW6boy2bLEPxJFnKIDCSQpgSEATxVZB1YUejzyXW9ZbJl3h8S4UFW86mPdO98MV/nPADQ=";
+
+                EDDSAPrivateKeySigner signer(privateKey , "base64");
+                EDDSAPublicKeyVerifier verifier(publicKey, "base64");
+
+                std::string plainText = "Hello EdDSA Signature with Ed25519";
+                std::string java_sign = "Z4ysyohl9WV7iYBe2oMWVBSuBTK/+JJ5KaN2/OVKHT+Zwn90z1xP4E7Pfz2Ix1UiMVLLU41Ko8ccHQdJhA7CAQ==";
+
+                std::cout << "------------  EDDSAPrivateKeySigner EDDSAPublicKeyVerifier check3 with java   ------------" << std::endl;
+                std::cout << signer.signToBase64(plainText) << std::endl;
+                passed = passed && (verifier.verifyBase64Sign(signer.signToBase64(plainText), plainText));
+
+                passed = passed && (verifier.verifyBase64Sign(java_sign, plainText));
+            }
+
+
+
+
+            if (passed) {
+                std::cout << "testEDDSASigner() passed " << std::endl;
+            } else {
+                std::cout << "testEDDSASigner() failed " << std::endl;
             }
         }
 
