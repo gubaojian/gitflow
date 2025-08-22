@@ -35,7 +35,6 @@ void runAllTests() {
     testRsaSign();
     testHmac();
     testDigest();
-    //testEcKeyGen();
     testSM2KeyGen();
     testSM2KeyEncrypt();
     testSM2KeySigner();
@@ -58,8 +57,8 @@ void runAllDemos() {
 
    // testEcKeyGen();
    // testEcKeyEncrypt();
-
-
+    testEcKeyGen();
+    testEcDHKeyGen();
 
 
 }

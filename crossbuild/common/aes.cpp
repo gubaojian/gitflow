@@ -76,7 +76,7 @@ namespace camel {
 namespace camel {
     namespace crypto {
 
-        inline bool algorithmHas(const std::string& algorithm, std::string_view target) {
+        inline bool aesAlgorithmHas(const std::string& algorithm, std::string_view target) {
             return algorithm.find(target) != std::string::npos;
         }
 
@@ -839,39 +839,39 @@ namespace camel {
         }
 
         std::string AESEncryptor::encrypt(const std::string_view &plainText) const {
-            if (algorithmHas(algorithm, "CBC")) {
+            if (aesAlgorithmHas(algorithm, "CBC")) {
                 return aes_normal_encrypt(plainText, secretKey, "CBC");
             }
-            if (algorithmHas(algorithm, "CFB")) {
+            if (aesAlgorithmHas(algorithm, "CFB")) {
                 return aes_normal_encrypt(plainText, secretKey, "CFB");
             }
-            if (algorithmHas(algorithm, "CTR")) {
+            if (aesAlgorithmHas(algorithm, "CTR")) {
                 return aes_normal_encrypt(plainText,  secretKey, "CTR");
             }
-            if (algorithmHas(algorithm, "CTS")) {
+            if (aesAlgorithmHas(algorithm, "CTS")) {
                 std::cerr << "AESDecryptor::decrypt CTS not support, please use AES-CBC" << std::endl;
                 return "";
             }
 
-            if (algorithmHas(algorithm, "ECB")) {
+            if (aesAlgorithmHas(algorithm, "ECB")) {
                 return aes_normal_encrypt(plainText, secretKey, "ECB");
             }
 
-            if (algorithmHas(algorithm, "OFB")) {
+            if (aesAlgorithmHas(algorithm, "OFB")) {
                 return aes_normal_encrypt(plainText, secretKey, "OFB");
             }
-            if (algorithmHas(algorithm, "GCM-SIV")) {
+            if (aesAlgorithmHas(algorithm, "GCM-SIV")) {
                 return aes_gcm_ccm_encrypt(plainText, secretKey, "GCM-SIV", "");
             }
 
-            if (algorithmHas(algorithm, "GCM")) {
+            if (aesAlgorithmHas(algorithm, "GCM")) {
                 return aes_gcm_ccm_encrypt(plainText,  secretKey, "GCM", "");
             }
-            if (algorithmHas(algorithm, "CCM")) {
+            if (aesAlgorithmHas(algorithm, "CCM")) {
                 return aes_gcm_ccm_encrypt(plainText, secretKey, "CCM", "");
             }
 
-            if (algorithmHas(algorithm, "AES-SIV") || algorithmHas(algorithm, "AES/SIV")) {
+            if (aesAlgorithmHas(algorithm, "AES-SIV") || aesAlgorithmHas(algorithm, "AES/SIV")) {
                 return aes_siv_encrypt(plainText, secretKey, "");
             }
 
@@ -889,17 +889,17 @@ namespace camel {
         }
 
         std::string AESEncryptor::encryptWithAAD(const std::string_view &plainText, const std::string_view &aad) const {
-            if (algorithmHas(algorithm, "GCM-SIV")) {
+            if (aesAlgorithmHas(algorithm, "GCM-SIV")) {
                 return aes_gcm_ccm_encrypt(plainText, secretKey, "GCM-SIV", aad);
             }
 
-            if (algorithmHas(algorithm, "GCM")) {
+            if (aesAlgorithmHas(algorithm, "GCM")) {
                 return aes_gcm_ccm_encrypt(plainText, secretKey, "GCM", aad);
             }
-            if (algorithmHas(algorithm, "CCM")) {
+            if (aesAlgorithmHas(algorithm, "CCM")) {
                 return aes_gcm_ccm_encrypt(plainText, secretKey, "CCM", aad);
             }
-            if (algorithmHas(algorithm, "AES-SIV") || algorithmHas(algorithm, "AES/SIV")) {
+            if (aesAlgorithmHas(algorithm, "AES-SIV") || aesAlgorithmHas(algorithm, "AES/SIV")) {
                 return aes_siv_encrypt(plainText, secretKey, aad);
             }
             std::cerr << "AESEncryptor::encryptWithAAD() not supported algorithm " << algorithm << std::endl;
@@ -939,40 +939,40 @@ namespace camel {
          * @return
          */
         std::string AESDecryptor::decrypt(const std::string_view &encryptedData) const {
-            if (algorithmHas(algorithm, "CBC")) {
+            if (aesAlgorithmHas(algorithm, "CBC")) {
                 return aes_normal_decrypt(encryptedData, secretKey, "CBC");
             }
-            if (algorithmHas(algorithm, "CFB")) {
+            if (aesAlgorithmHas(algorithm, "CFB")) {
                 return aes_normal_decrypt(encryptedData, secretKey, "CFB");
             }
-            if (algorithmHas(algorithm, "CTR")) {
+            if (aesAlgorithmHas(algorithm, "CTR")) {
                 return aes_normal_decrypt(encryptedData, secretKey, "CTR");
             }
-            if (algorithmHas(algorithm, "CTS")) {
+            if (aesAlgorithmHas(algorithm, "CTS")) {
                 std::cerr << "AESDecryptor::decrypt CTS not support, please use AES-CBC" << std::endl;
                 return "";
             }
 
-            if (algorithmHas(algorithm, "ECB")) {
+            if (aesAlgorithmHas(algorithm, "ECB")) {
                 return aes_normal_decrypt(encryptedData, secretKey, "ECB");
             }
 
-            if (algorithmHas(algorithm, "OFB")) {
+            if (aesAlgorithmHas(algorithm, "OFB")) {
                 return aes_normal_decrypt(encryptedData, secretKey, "OFB");
             }
 
-            if (algorithmHas(algorithm, "GCM-SIV")) {
+            if (aesAlgorithmHas(algorithm, "GCM-SIV")) {
                 return aes_gcm_ccm_decrypt(encryptedData, secretKey, "GCM-SIV", "");
             }
 
-            if (algorithmHas(algorithm, "GCM")) {
+            if (aesAlgorithmHas(algorithm, "GCM")) {
                 return aes_gcm_ccm_decrypt(encryptedData, secretKey, "GCM", "");
             }
-            if (algorithmHas(algorithm, "CCM")) {
+            if (aesAlgorithmHas(algorithm, "CCM")) {
                 return aes_gcm_ccm_decrypt(encryptedData, secretKey, "CCM", "");
             }
 
-            if (algorithmHas(algorithm, "AES-SIV") || algorithmHas(algorithm, "AES/SIV")) {
+            if (aesAlgorithmHas(algorithm, "AES-SIV") || aesAlgorithmHas(algorithm, "AES/SIV")) {
                 return aes_siv_decrypt(encryptedData, secretKey, "");
             }
 
@@ -989,17 +989,17 @@ namespace camel {
         }
 
         std::string AESDecryptor::decryptWithAAD(const std::string_view &encryptedData, const std::string_view &aad) const {
-            if (algorithmHas(algorithm, "GCM-SIV")) {
+            if (aesAlgorithmHas(algorithm, "GCM-SIV")) {
                 return aes_gcm_ccm_decrypt(encryptedData, secretKey, "GCM-SIV", aad);
             }
 
-            if (algorithmHas(algorithm, "GCM")) {
+            if (aesAlgorithmHas(algorithm, "GCM")) {
                 return aes_gcm_ccm_decrypt(encryptedData, secretKey, "GCM", aad);
             }
-            if (algorithmHas(algorithm, "CCM")) {
+            if (aesAlgorithmHas(algorithm, "CCM")) {
                 return aes_gcm_ccm_decrypt(encryptedData, secretKey, "CCM", aad);
             }
-            if (algorithmHas(algorithm, "AES-SIV") || algorithmHas(algorithm, "AES/SIV")) {
+            if (aesAlgorithmHas(algorithm, "AES-SIV") || aesAlgorithmHas(algorithm, "AES/SIV")) {
                 return aes_siv_decrypt(encryptedData, secretKey, aad);
             }
             std::cerr << "AESDecryptor::decryptWithAAD() not supported algorithm " << algorithm << std::endl;

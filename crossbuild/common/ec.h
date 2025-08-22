@@ -13,19 +13,19 @@
 namespace camel {
     namespace crypto {
 
-        EVP_PKEY* ECPublicKeyFromPem(const std::string& pemKey);
-        EVP_PKEY* ECPublicKeyFromBase64(const std::string& base64Key);
-        EVP_PKEY* ECPublicKeyFromHex(const std::string& hexKey);
-        EVP_PKEY* ECPublicKeyFromDer(const std::string& derKey);
-        EVP_PKEY* ECPublicKeyFromDerByBio(const std::string& derKey);
-        EVP_PKEY* ECPublicKeyFrom(const std::string& publicKey, const std::string& format);
+        EVP_PKEY* ECPublicKeyFromPem(const std::string_view& pemKey);
+        EVP_PKEY* ECPublicKeyFromBase64(const std::string_view& base64Key);
+        EVP_PKEY* ECPublicKeyFromHex(const std::string_view& hexKey);
+        EVP_PKEY* ECPublicKeyFromDer(const std::string_view& derKey);
+        EVP_PKEY* ECPublicKeyFromDerByBio(const std::string_view& derKey);
+        EVP_PKEY* ECPublicKeyFrom(const std::string_view& publicKey, const std::string_view& format);
 
-        EVP_PKEY* ECPrivateKeyFromPem(const std::string& pemKey);
-        EVP_PKEY* ECPrivateKeyFromBase64(const std::string& base64Key);
-        EVP_PKEY* ECPrivateKeyFromHex(const std::string& hexKey);
-        EVP_PKEY* ECPrivateKeyFromDer(const std::string& derKey);
-        EVP_PKEY* ECPrivateKeyFromDerByBio(const std::string& derKey);
-        EVP_PKEY* ECPrivateKeyFrom(const std::string& privateKey, const std::string& format);
+        EVP_PKEY* ECPrivateKeyFromPem(const std::string_view& pemKey);
+        EVP_PKEY* ECPrivateKeyFromBase64(const std::string_view& base64Key);
+        EVP_PKEY* ECPrivateKeyFromHex(const std::string_view& hexKey);
+        EVP_PKEY* ECPrivateKeyFromDer(const std::string_view& derKey);
+        EVP_PKEY* ECPrivateKeyFromDerByBio(const std::string_view& derKey);
+        EVP_PKEY* ECPrivateKeyFrom(const std::string_view& privateKey, const std::string_view& format);
 
         inline void freeECEvpKey(EVP_PKEY* key) {
             if (key != nullptr) {
@@ -41,8 +41,9 @@ namespace camel {
             *  NIST 曲线：secp256r1（P-256）、secp384r1（P-384）、secp521r1（P-521）
             *  区块链常用：secp256k1
             *  Edwards 曲线：ed25519、x25519、ed448、x448
-            *  国密曲线：SM2（需 OpenSSL 支持国密算法）
-             *  ecp256r1 secp284r1 ed25519 secp256k1 SM2  x25519 ed448
+            *  x25519/x448：专门用于 ECDH 密钥交换（基于 Montgomery 曲线优化）。
+            *  ed25519/ed448：专门用于 数字签名（基于 Edwards 曲线优化）。
+            *  国密曲线：SM2 请使用 SM2KeyPairGenerator
              */
             explicit ECKeyPairGenerator(const std::string_view& curveName = "secp256r1");
             ~ECKeyPairGenerator();
@@ -114,9 +115,9 @@ namespace camel {
                     const std::string_view& format);
             ~ECDHSharedSecretGenerator() = default;
             public:
-                const std::string getGenSecret();
-                const std::string getGenSecretHex();
-                const std::string getGenSecretBase64();
+                std::string getGenSecret();
+                std::string getGenSecretHex();
+                std::string getGenSecretBase64();
             private:
                  std::string genSecret;
         };
@@ -128,9 +129,9 @@ namespace camel {
                 const std::string_view& salt, const std::string_view& hashName = "SHA2-256");
             ~HKDFSecretGenerator() = default;
             public:
-                const std::string getGenSecret();
-                const std::string getGenSecretHex();
-                const std::string getGenSecretBase64();
+                std::string getGenSecret();
+                std::string getGenSecretHex();
+                std::string getGenSecretBase64();
             private:
                 std::string genSecret;
         };

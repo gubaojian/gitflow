@@ -561,7 +561,7 @@ namespace camel {
             return false;
         }
 
-        inline bool algorithmHas(const std::string& algorithm, std::string_view target) {
+        inline bool rsaAlgorithmHas(const std::string& algorithm, std::string_view target) {
             return algorithm.find(target) != std::string::npos;
         }
 
@@ -569,28 +569,28 @@ namespace camel {
             std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_PKCS1;
             std::string signHash = OSSL_DIGEST_NAME_SHA2_256;
 
-            if (algorithmHas(algorithm,"PSS")) {
+            if (rsaAlgorithmHas(algorithm,"PSS")) {
                 paddingMode = OSSL_PKEY_RSA_PAD_MODE_PSS;
             }
-            if (algorithmHas(algorithm,"MD5withRSA")) {
+            if (rsaAlgorithmHas(algorithm,"MD5withRSA")) {
                 signHash = OSSL_DIGEST_NAME_MD5;
-            } else if (algorithmHas(algorithm,"SHA1withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA1withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA1;
-            } else if (algorithmHas(algorithm,"SHA256withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA256withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_256;
-            } else if (algorithmHas(algorithm,"SHA384withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA384withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_384;
-            } else if (algorithmHas(algorithm,"SHA512withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA512withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_256;
-            } else if (algorithmHas(algorithm,"SHA512/224withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA512/224withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_512_224;
-            } else if (algorithmHas(algorithm,"SHA512/256withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA512/256withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_512_256;
-            } else if (algorithmHas(algorithm,"SHA3_256withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA3_256withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA3_256;
-            } else if (algorithmHas(algorithm,"SHA3_384withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA3_384withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA3_384;
-            } else if (algorithmHas(algorithm,"SHA3_512withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA3_512withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA3_512;
             }
             OSSL_PARAM params[] = {
@@ -610,28 +610,28 @@ namespace camel {
             std::string paddingMode = OSSL_PKEY_RSA_PAD_MODE_PKCS1;
             std::string signHash = OSSL_DIGEST_NAME_SHA2_256;
 
-            if (algorithmHas(algorithm,"PSS")) {
+            if (rsaAlgorithmHas(algorithm,"PSS")) {
                 paddingMode = OSSL_PKEY_RSA_PAD_MODE_PSS;
             }
-            if (algorithmHas(algorithm,"MD5withRSA")) {
+            if (rsaAlgorithmHas(algorithm,"MD5withRSA")) {
                 signHash = OSSL_DIGEST_NAME_MD5;
-            } else if (algorithmHas(algorithm,"SHA1withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA1withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA1;
-            } else if (algorithmHas(algorithm,"SHA256withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA256withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_256;
-            } else if (algorithmHas(algorithm,"SHA384withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA384withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_384;
-            } else if (algorithmHas(algorithm,"SHA512withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA512withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_256;
-            } else if (algorithmHas(algorithm,"SHA512/224withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA512/224withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_512_224;
-            } else if (algorithmHas(algorithm,"SHA512/256withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA512/256withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_512_256;
-            } else if (algorithmHas(algorithm,"SHA3_256withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA3_256withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA3_256;
-            } else if (algorithmHas(algorithm,"SHA3_384withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA3_384withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA3_384;
-            } else if (algorithmHas(algorithm,"SHA3_512withRSA")) {
+            } else if (rsaAlgorithmHas(algorithm,"SHA3_512withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA3_512;
             }
             OSSL_PARAM params[] = {

@@ -15,7 +15,7 @@
 
 namespace camel {
     namespace crypto {
-        EVP_PKEY* ECPublicKeyFromPem(const std::string& pemKey) {
+        EVP_PKEY* ECPublicKeyFromPem(const std::string_view& pemKey) {
             EVP_PKEY* key = nullptr;
             BIO* bio = BIO_new_mem_buf(pemKey.data(), static_cast<int>(pemKey.size()));
             if (!bio) {
@@ -34,15 +34,15 @@ namespace camel {
             return key;
         }
 
-        EVP_PKEY* ECPublicKeyFromBase64(const std::string& base64Key) {
+        EVP_PKEY* ECPublicKeyFromBase64(const std::string_view& base64Key) {
             return ECPublicKeyFromDer(base64_decode_url_safe(base64Key));
         }
 
-        EVP_PKEY* ECPublicKeyFromHex(const std::string& hexKey) {
+        EVP_PKEY* ECPublicKeyFromHex(const std::string_view& hexKey) {
             return  ECPublicKeyFromDer(hex_decode(hexKey));
         }
 
-        EVP_PKEY* ECPublicKeyFromDer(const std::string& derKey) {
+        EVP_PKEY* ECPublicKeyFromDer(const std::string_view& derKey) {
             EVP_PKEY* key = nullptr;
             const unsigned char *in = (const unsigned char *)derKey.data();
             long length = derKey.size();
@@ -54,7 +54,7 @@ namespace camel {
             return key;
         }
 
-        EVP_PKEY* ECPublicKeyFromDerByBio(const std::string& derKey) {
+        EVP_PKEY* ECPublicKeyFromDerByBio(const std::string_view& derKey) {
             EVP_PKEY* key = nullptr;
             BIO* bio = BIO_new_mem_buf(derKey.data(), static_cast<int>(derKey.size()));
             if (!bio) {
@@ -73,7 +73,7 @@ namespace camel {
         }
 
 
-        EVP_PKEY* ECPublicKeyFrom(const std::string& publicKey, const std::string& format) {
+        EVP_PKEY* ECPublicKeyFrom(const std::string_view& publicKey, const std::string_view& format) {
             if ("hex" == format) {
                 return ECPublicKeyFromHex(publicKey);
             } else if ("base64" == format) {
@@ -87,7 +87,7 @@ namespace camel {
             }
         }
 
-        EVP_PKEY* ECPrivateKeyFromPem(const std::string& pemKey) {
+        EVP_PKEY* ECPrivateKeyFromPem(const std::string_view& pemKey) {
             EVP_PKEY* key = nullptr;
             BIO* bio = BIO_new_mem_buf(pemKey.data(), static_cast<int>(pemKey.size()));
             if (!bio) {
@@ -105,19 +105,19 @@ namespace camel {
             return key;
         }
 
-        EVP_PKEY* ECPrivateKeyFromDer(const std::string& derKey) {
+        EVP_PKEY* ECPrivateKeyFromDer(const std::string_view& derKey) {
             EVP_PKEY* key = nullptr;
             const unsigned char *in = (const unsigned char *)derKey.data();
             long length = derKey.size();
-            if (d2i_PrivateKey(EVP_PKEY_EC, &key, &in, length) == nullptr) {
-                std::cerr << "ECPublicKeyFromDer Failed to d2i_PrivateKey " << std::endl;
+            if (d2i_AutoPrivateKey(&key, &in, length) == nullptr) {
+                std::cerr << "ECPublicKeyFromDer Failed to d2i_AutoPrivateKey " << std::endl;
                 printOpenSSLError();
                 return nullptr;
             }
             return key;
         }
 
-        EVP_PKEY* ECPrivateKeyFromDerByBio(const std::string& derKey) {
+        EVP_PKEY* ECPrivateKeyFromDerByBio(const std::string_view& derKey) {
             EVP_PKEY* key = nullptr;
             BIO* bio = BIO_new_mem_buf(derKey.data(), static_cast<int>(derKey.size()));
             if (!bio) {
@@ -136,15 +136,15 @@ namespace camel {
         }
 
 
-        EVP_PKEY* ECPrivateKeyFromBase64(const std::string& base64Key) {
+        EVP_PKEY* ECPrivateKeyFromBase64(const std::string_view& base64Key) {
             return ECPrivateKeyFromDer(base64_decode_url_safe(base64Key));
         }
 
-        EVP_PKEY* ECPrivateKeyFromHex(const std::string& hexKey) {
+        EVP_PKEY* ECPrivateKeyFromHex(const std::string_view& hexKey) {
             return ECPrivateKeyFromDer(hex_decode(hexKey));
         }
 
-        EVP_PKEY* ECPrivateKeyFrom(const std::string& privateKey, const std::string& format) {
+        EVP_PKEY* ECPrivateKeyFrom(const std::string_view& privateKey, const std::string_view& format) {
             if ("hex" == format) {
                 return ECPrivateKeyFromHex(privateKey);
             } else if ("base64" == format) {
@@ -164,7 +164,36 @@ namespace camel {
 
 namespace camel {
     namespace crypto {
-        inline static std::string adaptCurveName(const std::string_view &curveName) {
+        inline bool ecCurveNameHas(const std::string_view& curveName, std::string_view target) {
+            return curveName.find(target) != std::string::npos;
+        }
+
+        inline  std::string curveNameToLower(const std::string_view& curveName) {
+            std::string lowerStr;
+            lowerStr.reserve(curveName.size());
+            std::transform(
+                curveName.begin(),
+                curveName.end(),
+                std::back_inserter(lowerStr),
+                [](unsigned char c) { return std::tolower(c); }
+            );
+            return lowerStr;
+        }
+
+        inline std::string curveNameToUpper(const std::string_view& curveName) {
+            std::string upperStr;
+            upperStr.reserve(curveName.size());
+            std::transform(
+                curveName.begin(),
+                curveName.end(),
+                std::back_inserter(upperStr),
+                [](unsigned char c) { return std::toupper(c); }
+            );
+            return upperStr;
+        }
+
+        inline static std::string adaptCurveName(const std::string_view &curveNameView) {
+            std::string curveName = curveNameToLower(curveNameView);
             if (curveName == "secp256r1") { //secp256r1 (P-256)	prime256v1
                 return "P-256";
             }
@@ -174,7 +203,19 @@ namespace camel {
             if (curveName == "secp521r1") {
                 return "P-521";
             }
-            return std::string(curveName);
+            if (curveName == "ed25519") {
+                return "ED25519";
+            }
+            if (curveName == "x25519") {
+                return "X25519";
+            }
+            if (curveName == "x448") {
+                return "X448";
+            }
+            if (curveName == "ed448") {
+                return "ED448";
+            }
+            return curveNameToUpper(curveNameView);
         }
     }
 }
@@ -182,12 +223,16 @@ namespace camel {
 
 namespace camel {
     namespace crypto {
+
         ECKeyPairGenerator::ECKeyPairGenerator(const std::string_view &curveName) {
             this->ctx = nullptr;
             this->pkey = nullptr;
             this->curveName = adaptCurveName(curveName);
-            if (curveName == "Ed25519") {
-                ctx = EVP_PKEY_CTX_new_from_name(nullptr, "Ed25519", nullptr);
+            if (this->curveName == "ED25519"
+                || this->curveName == "X25519"
+                || this->curveName == "ED448"
+                || this->curveName == "X448") {
+                ctx = EVP_PKEY_CTX_new_from_name(nullptr, this->curveName.data(), nullptr);
                 if (!ctx) {
                     std::cerr << " ECKeyPairGenerator Failed to EVP_PKEY_CTX_new_from_name EC" << std::endl;
                     printOpenSSLError();
@@ -200,7 +245,7 @@ namespace camel {
                     return;
                 }
 
-                if (EVP_PKEY_generate(ctx, &pkey) <= 0) {
+                if (EVP_PKEY_keygen(ctx, &pkey) <= 0) {
                     std::cerr << " ECKeyPairGenerator Failed to EVP_PKEY_keygen "<< this->curveName << std::endl;
                     printOpenSSLError();
                     return;
@@ -243,22 +288,6 @@ namespace camel {
                 std::cerr << " ECKeyPairGenerator Failed to EVP_PKEY_keygen "<< this->curveName << std::endl;
                 printOpenSSLError();
                 return;
-            }
-            {
-                auto ctx = EVP_PKEY_CTX_new(pkey, nullptr);
-                // 4. 设置 EC 曲线参数（对应命令的 -pkeyopt ec_paramgen_curve:secp256r1）
-                int curve_nid = OBJ_sn2nid("secp256r1");  // 将曲线名转为 NID（如 secp256r1 → NID_secp256r1）
-                if (curve_nid == NID_undef) {
-                    std::cerr << "[Error] 不支持的椭圆曲线: secp256r1 " << std::endl;
-                }
-
-                if (EVP_PKEY_CTX_set_ec_paramgen_curve_nid(ctx, curve_nid) <= 0) {
-                    std::cerr << "设置 EC 曲线参数失败: " << this->curveName << std::endl;
-                }
-                if (EVP_PKEY_encrypt_init_ex(ctx,  nullptr) <= 0) {
-                    std::cerr << "configEncryptParams Failed to EVP_PKEY_encrypt_init_ex "  << std::endl;
-                    printOpenSSLError();
-                }
             }
         }
 
@@ -566,3 +595,83 @@ namespace camel {
     }
 }
 
+namespace camel {
+    namespace crypto {
+        ECDHSharedSecretGenerator::ECDHSharedSecretGenerator(const std::string_view &localPrivateKey, const std::string_view &remotePublicKey, const std::string_view &format) {
+            {
+                EVP_PKEY *localPKey  = ECPrivateKeyFrom(localPrivateKey, format);
+                if (localPKey == nullptr) {
+                    std::cerr << "ECDHSharedSecretGenerator::ECDHSharedSecretGenerator() Failed to call ECPrivateKeyFrom" << std::endl;
+                    printOpenSSLError();
+                    return;
+                }
+                EVP_PKEY *remotePKey = ECPublicKeyFrom(remotePublicKey, format);
+                if (remotePKey == nullptr) {
+                    std::cerr << "ECDHSharedSecretGenerator::ECDHSharedSecretGenerator() Failed to call ECPublicKeyFrom" << std::endl;
+                    printOpenSSLError();
+                    EVP_PKEY_free(localPKey);
+                    return;
+                }
+                EVP_PKEY_CTX * deriveCtx = EVP_PKEY_CTX_new_from_pkey(nullptr, localPKey, nullptr);
+                if (deriveCtx == nullptr) {
+                    std::cerr << "ECDHSharedSecretGenerator::ECDHSharedSecretGenerator() Failed to call EVP_PKEY_CTX_new_from_pkey" << std::endl;
+                    printOpenSSLError();
+                    EVP_PKEY_free(localPKey);
+                    EVP_PKEY_free(remotePKey);
+                    return;
+                }
+                if (EVP_PKEY_derive_init(deriveCtx) <= 0) {
+                    std::cerr << "ECDHSharedSecretGenerator::ECDHSharedSecretGenerator() Failed to call EVP_PKEY_derive_init " << std::endl;
+                    printOpenSSLError();
+                    EVP_PKEY_free(localPKey);
+                    EVP_PKEY_free(remotePKey);
+                    EVP_PKEY_CTX_free(deriveCtx);
+                    return;
+                }
+                if (EVP_PKEY_derive_set_peer(deriveCtx, remotePKey) <= 0) {
+                    std::cerr << "ECDHSharedSecretGenerator::ECDHSharedSecretGenerator() Failed to set peer" << std::endl;
+                    printOpenSSLError();
+                    EVP_PKEY_free(localPKey);
+                    EVP_PKEY_free(remotePKey);
+                    EVP_PKEY_CTX_free(deriveCtx);
+                    return;
+                }
+
+                size_t keylen = 0;
+                {
+                    if (EVP_PKEY_derive(deriveCtx, nullptr, &keylen) <= 0) {
+                        std::cerr << "ECDHSharedSecretGenerator::ECDHSharedSecretGenerator() Failed to get secret len" << std::endl;
+                        printOpenSSLError();
+                        EVP_PKEY_free(localPKey);
+                        EVP_PKEY_free(remotePKey);
+                        EVP_PKEY_CTX_free(deriveCtx);
+                        return;
+                    }
+                }
+                genSecret.resize(std::max((int)keylen, 512));
+                unsigned char *key = (unsigned char *)genSecret.data();
+                if (EVP_PKEY_derive(deriveCtx, key, &keylen) <= 0) {
+                    std::cerr << "ECDHSharedSecretGenerator::ECDHSharedSecretGenerator() Failed to derive secret" << std::endl;
+                    printOpenSSLError();
+                    EVP_PKEY_free(localPKey);
+                    EVP_PKEY_free(remotePKey);
+                    EVP_PKEY_CTX_free(deriveCtx);
+                    return;
+                }
+                genSecret.resize(keylen);
+            }
+        }
+
+        std::string ECDHSharedSecretGenerator::getGenSecret() {
+            return genSecret;
+        }
+
+        std::string ECDHSharedSecretGenerator::getGenSecretHex() {
+            return hex_encode(genSecret);
+        }
+
+        std::string ECDHSharedSecretGenerator::getGenSecretBase64() {
+            return base64_encode(genSecret);
+        }
+    }
+}
