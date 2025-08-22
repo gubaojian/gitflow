@@ -7,6 +7,7 @@
 #include <iostream>
 #include <ostream>
 
+#include "../common/base64.h"
 #include "../common/ec.h"
 
 
@@ -211,13 +212,108 @@ namespace camel {
                 std::cout << localECDHSharedSecretGenerator.getGenSecretBase64() << std::endl;
             }
 
-
-
-
             if (passed) {
                 std::cout << "testEcDHKeyGen() passed " << std::endl;
             } else {
                 std::cout << "testEcDHKeyGen() failed " << std::endl;
+            }
+        }
+
+        void testHKDFKeyGen() {
+            bool passed = true;
+            {
+                ECKeyPairGenerator localGenerator("secp256r1");
+                ECKeyPairGenerator remoteGenerator("secp256r1");
+
+                ECDHSharedSecretGenerator localECDHSharedSecretGenerator(localGenerator.getBase64PrivateKey(), remoteGenerator.getBase64PublicKey(), "base64");
+                ECDHSharedSecretGenerator remoteECDHSharedSecretGenerator(remoteGenerator.getBase64PrivateKey(), localGenerator.getBase64PublicKey(), "base64");
+                std::string secret = localECDHSharedSecretGenerator.getGenSecret();
+                HKDFSecretGenerator hkdfGenerator(secret, "test", "test-salt");
+
+                std::cout << "------------ HKDFSecretGenerator check1  ------------" << std::endl;
+                std::cout << hkdfGenerator.getGenSecretBase64() << std::endl;
+            }
+            {
+                std::string secret = "test hkdf 2";
+                std::string infoKey = "standard-hkdf-example";
+                std::string salt = "hkdf-salt";
+                HKDFSecretGenerator hkdfGenerator(secret, infoKey, salt);
+
+                std::string expect_secret = "sHR+JXR3P75igX2NQoshQX5pErG+Pm50C1P3eUMzd4g=";
+
+                std::cout << "------------ HKDFSecretGenerator check2  ------------" << std::endl;
+                std::cout << hkdfGenerator.getGenSecretBase64() << std::endl;
+                passed = passed && (hkdfGenerator.getGenSecretBase64() == expect_secret);
+            }
+            if (passed) {
+                std::cout << "testHKDFKeyGen() passed " << std::endl;
+            } else {
+                std::cout << "testHKDFKeyGen() failed " << std::endl;
+            }
+        }
+
+        void testECDSASigner() {
+            bool passed = true;
+            {
+                ECKeyPairGenerator keyGenerator("secp256r1");
+                ECDSAPrivateKeySigner signer(keyGenerator.getBase64PrivateKey(), "base64", "SHA256withECDSA");
+                ECDSAPublicKeyVerifier verifier(keyGenerator.getBase64PublicKey(), "base64", "SHA256withECDSA");
+
+                std::string plainText = "hello world ECDSA";
+
+                std::cout << "------------  ECDSAPrivateKeySigner ECDSAPublicKeyVerifier  check1  ------------" << std::endl;
+                std::cout << signer.signToBase64(plainText) << std::endl;
+                passed = passed && (verifier.verifyBase64Sign(signer.signToBase64(plainText), plainText));
+            }
+
+            {
+                //secp256r1
+
+                std::string publicKey ="MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////wAAAAEAAAAAAAAAAAAAAAD///////////////8wRAQg/////wAAAAEAAAAAAAAAAAAAAAD///////////////wEIFrGNdiqOpPns+u9VXaYhrxlHQawzFOw9jvOPD4n0mBLBEEEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li/hp/m47n60p8D54WK84zV2sxXs7LtkBoN79R9QIhAP////8AAAAA//////////+85vqtpxeehPO5ysL8YyVRAgEBA0IABA6j78Q7dzIQ3MjXnYswtPPj9jU7ar2xh04x4pzLQmT2MASK6koWxoeBpIOzbsmx0fYhtiMF8AWBblkvhg2tFys=";
+
+                std::string privateKey = "MIICSwIBADCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////wAAAAEAAAAAAAAAAAAAAAD///////////////8wRAQg/////wAAAAEAAAAAAAAAAAAAAAD///////////////wEIFrGNdiqOpPns+u9VXaYhrxlHQawzFOw9jvOPD4n0mBLBEEEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li/hp/m47n60p8D54WK84zV2sxXs7LtkBoN79R9QIhAP////8AAAAA//////////+85vqtpxeehPO5ysL8YyVRAgEBBIIBVTCCAVECAQEEIDEEwzh6+ClCMUnKz9s/l3c4ag+q64F9iDTczj8pV3s2oIHjMIHgAgEBMCwGByqGSM49AQECIQD/////AAAAAQAAAAAAAAAAAAAAAP///////////////zBEBCD/////AAAAAQAAAAAAAAAAAAAAAP///////////////AQgWsY12Ko6k+ez671VdpiGvGUdBrDMU7D2O848PifSYEsEQQRrF9Hy4SxCR/i85uVjpEDydwN9gS3rM6D0oTlF2JjClk/jQuL+Gn+bjufrSnwPnhYrzjNXazFezsu2QGg3v1H1AiEA/////wAAAAD//////////7zm+q2nF56E87nKwvxjJVECAQGhRANCAAQOo+/EO3cyENzI152LMLTz4/Y1O2q9sYdOMeKcy0Jk9jAEiupKFsaHgaSDs27JsdH2IbYjBfAFgW5ZL4YNrRcr";
+
+                ECDSAPrivateKeySigner signer(privateKey , "base64", "SHA256withECDSA");
+                ECDSAPublicKeyVerifier verifier(publicKey, "base64", "SHA256withECDSA");
+
+                std::string plainText = "Hello ECC Signature";
+                std::string java_sign = "MEQCH1sCTgJCrE2Cv1snOOb+41U82VFqBPf25qHEdzpIa0ECIQC5I0Vuh5qsPQTMXoYQfX+OOT3mDIgP612yeNEif85h+g==";
+
+                std::cout << "------------  ECDSAPrivateKeySigner ECDSAPublicKeyVerifier check2 with java   ------------" << std::endl;
+                std::cout << signer.signToBase64(plainText) << std::endl;
+                passed = passed && (verifier.verifyBase64Sign(signer.signToBase64(plainText), plainText));
+
+                passed = passed && (verifier.verifyBase64Sign(java_sign, plainText));
+            }
+
+            {
+                ECKeyPairGenerator keyGenerator("secp521r1");
+                ECDSAPrivateKeySigner signer(keyGenerator.getBase64PrivateKey(), "base64", "SHA512withECDSA");
+                ECDSAPublicKeyVerifier verifier(keyGenerator.getBase64PublicKey(), "base64", "SHA512withECDSA");
+
+                std::string plainText = "hello world ECDSA";
+
+                std::cout << "------------  ECDSAPrivateKeySigner ECDSAPublicKeyVerifier secp521r1 check1  ------------" << std::endl;
+                std::cout << signer.signToBase64(plainText) << std::endl;
+                passed = passed && (verifier.verifyBase64Sign(signer.signToBase64(plainText), plainText));
+            }
+
+            {
+                ECKeyPairGenerator keyGenerator("secp256k1");
+                ECDSAPrivateKeySigner signer(keyGenerator.getBase64PrivateKey(), "base64", "SHA256withECDSA");
+                ECDSAPublicKeyVerifier verifier(keyGenerator.getBase64PublicKey(), "base64", "SHA256withECDSA");
+
+                std::string plainText = "hello world ECDSA";
+
+                std::cout << "------------  ECDSAPrivateKeySigner ECDSAPublicKeyVerifier secp256k1 check1  ------------" << std::endl;
+                std::cout << signer.signToBase64(plainText) << std::endl;
+                passed = passed && (verifier.verifyBase64Sign(signer.signToBase64(plainText), plainText));
+            }
+
+            if (passed) {
+                std::cout << "testECDSASigner() passed " << std::endl;
+            } else {
+                std::cout << "testECDSASigner() failed " << std::endl;
             }
         }
 

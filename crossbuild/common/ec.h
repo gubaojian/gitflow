@@ -4,10 +4,12 @@
 
 #ifndef CAMEL_ELLIPTIC_CURVE_H
 #define CAMEL_ELLIPTIC_CURVE_H
+#include <iostream>
 #include <string>
 #include <string_view>
 #include <openssl/types.h>
 
+#include "config.h"
 #include "openssl/evp.h"
 
 namespace camel {
@@ -33,6 +35,7 @@ namespace camel {
             }
         }
 
+
         class ECKeyPairGenerator {
         public:
             /**
@@ -43,6 +46,13 @@ namespace camel {
             *  Edwards 曲线：ed25519、x25519、ed448、x448
             *  x25519/x448：专门用于 ECDH 密钥交换（基于 Montgomery 曲线优化）。
             *  ed25519/ed448：专门用于 数字签名（基于 Edwards 曲线优化）。
+            *  Edwards 曲线（ed25519、ed448）：
+            *  对应的算法是 EdDSA（Edwards-curve Digital Signature Algorithm），而非 ECDSA。
+            *  特点：签名速度极快、抗侧信道攻击能力强，广泛用于 SSH 密钥、容器镜像签名（如 Docker）、加密货币（如 Monero）。
+            *  与 ECDSA 的区别：EdDSA 是专门为 Edwards 曲线设计的签名算法，流程更简洁，而 ECDSA 是通用椭圆曲线签名框架。
+            *  Montgomery 曲线（x25519、x448）：
+            *  对应的算法是 ECDH（椭圆曲线 Diffie-Hellman） 的优化版本，仅用于 密钥交换（生成共享密钥），不用于签名。
+            *  应用：TLS 1.3 的密钥协商、Signal 等即时通讯工具的端到端加密。
             *  国密曲线：SM2 请使用 SM2KeyPairGenerator
              */
             explicit ECKeyPairGenerator(const std::string_view& curveName = "secp256r1");
@@ -106,6 +116,9 @@ namespace camel {
 }
 
 
+
+
+
 namespace camel {
     namespace crypto {
 
@@ -122,21 +135,114 @@ namespace camel {
                  std::string genSecret;
         };
 
+    }
+}
+
+namespace camel {
+    namespace crypto {
         class HKDFSecretGenerator {
-            public:
+        public:
             explicit HKDFSecretGenerator(const std::string_view& secret,
                 const std::string_view& infoKey,
-                const std::string_view& salt, const std::string_view& hashName = "SHA2-256");
+                const std::string_view& salt, const std::string_view& hashName = "SHA2-256",
+                size_t secretLen = 0);//0 根据hash自动计算长度
             ~HKDFSecretGenerator() = default;
+        public:
+            std::string getGenSecret();
+            std::string getGenSecretHex();
+            std::string getGenSecretBase64();
+        private:
+            std::string genSecret;
+        };
+    }
+}
+
+
+
+
+namespace camel {
+    namespace crypto {
+        class ECDSAPrivateKeySigner {
             public:
-                std::string getGenSecret();
-                std::string getGenSecretHex();
-                std::string getGenSecretBase64();
+                /**
+                  * format = "pem", "hex", "base64", "der"
+                  * algorithm SHA1withECDSA HA224withECDSA SHA256withECDSA SHA384withECDSA  SHA512withECDSA
+                  * SHA512/224withECDSA  SHA512/256withECDSA
+                  * SHA3_256withECDSA  SHA3_384withECDSA  SHA3_512withECDSA
+                   */
+                explicit ECDSAPrivateKeySigner(const std::string_view& privateKey,
+                      const std::string_view& format = "pem",
+                      const std::string_view& algorithm = "SHA256withECDSA");
+                ~ECDSAPrivateKeySigner() = default;
+            public:
+                ECDSAPrivateKeySigner(const ECDSAPrivateKeySigner&) = delete;
+                ECDSAPrivateKeySigner& operator=(const ECDSAPrivateKeySigner&) = delete;
+            public:
+                std::string sign(const std::string_view& plainText) const;
+                std::string signToBase64(const std::string_view& plainText) const;
+                std::string signToHex(const std::string_view& plainText) const;
+            public:
+                /**
+                 * 外部提供的EVP_PKEY指针，如果指定则不再加载默认秘钥.不指定则，加载默认秘钥
+                 *  外部自己负责释放，管理EVP_PKEY生命周期，用于复用EVP_PKEY秘钥，避免重复加载，高性能等场景
+                 * @param pkey
+                 */
+                void setExternalEvpKey(EVP_PKEY* pkey) {
+                    this->externalEvpKey = pkey;
+                }
             private:
-                std::string genSecret;
+                std::string privateKey;
+                std::string format;
+                std::string algorithm;
+            private:
+                EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
+        };
+    }
+}
+
+
+namespace camel {
+    namespace crypto {
+        class ECDSAPublicKeyVerifier {
+        public:
+            /**
+              * format = "pem", "hex", "base64", "der"
+              * algorithm
+              * MD5withRSA SHA1withRSA SHA256withRSA SHA384withRSA SHA512withRSA
+              * SHA512/224withRSA SHA512/256withRSA
+              * SHA3_256withRSA SHA3_384withRSA SHA3_512withRSA
+              *  or pre algorithm add /PSS SHA256withRSA/PSS
+               */
+            explicit ECDSAPublicKeyVerifier(const std::string_view& publicKey,
+                  const std::string_view& format = "pem",
+                  const std::string_view& algorithm = "SHA256withRSA");
+            ~ECDSAPublicKeyVerifier() = default;
+        public:
+            bool verifySign(const std::string_view& sign, const std::string_view& data) const;
+            bool verifyHexSign(const std::string_view& hexSign, const std::string_view& data) const;
+            bool verifyBase64Sign(const std::string_view& base64Sign, const std::string_view& data) const;
+        public:
+            /**
+             * 外部提供的EVP_PKEY指针，如果指定则不再加载默认秘钥.不指定则，加载默认秘钥
+             *  外部自己负责释放，管理EVP_PKEY生命周期，用于复用EVP_PKEY秘钥，避免重复加载，高性能等场景
+             * @param pkey
+             */
+            void setExternalEvpKey(EVP_PKEY* pkey) {
+                this->externalEvpKey = pkey;
+            }
+        private:
+            std::string publicKey;
+            std::string format;
+            std::string algorithm;
+        private:
+            EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
         };
 
     }
 }
+
+
+
+
 
 #endif //CAMEL_ELLIPTIC_CURVE_H

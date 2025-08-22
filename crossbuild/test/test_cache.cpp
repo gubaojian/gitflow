@@ -1,12 +1,13 @@
 //
-// Created by efurture on 25-8-16.
+// Created by baojian on 2025/8/22.
 //
 
-#include "common.h"
-#include "config.h"
-#include <unordered_map>
-#include <memory>
+#include "test_cache.h"
+
 #include <mutex>
+#include <unordered_map>
+
+#include "openssl/evp.h"
 
 
 namespace camel {
@@ -58,7 +59,7 @@ namespace camel {
             }
             std::lock_guard<std::mutex> lock(evpKeyCacheMutex);
             EVP_PKEY_up_ref(evpKey);
-            if (evpKeyCacheMap.size() >= CAMEL_EVP_KEY_CACHE_SIZE) {
+            if (evpKeyCacheMap.size() >= 12) {
                 evpKeyCacheClearAllInner();
             }
             EVP_PKEY* cachedKey = evpKeyCacheGetInner(key, algorithm);

@@ -41,6 +41,10 @@ void runAllTests() {
 
     testChaCha20KeyGen();
     testChaCha20KeyEncrypt();
+
+    testEcKeyGen();
+    testEcDHKeyGen();
+    testHKDFKeyGen();
 }
 
 void runAllDemos() {
@@ -57,9 +61,8 @@ void runAllDemos() {
 
    // testEcKeyGen();
    // testEcKeyEncrypt();
-    testEcKeyGen();
-    testEcDHKeyGen();
 
+    testECDSASigner();
 
 }
 

@@ -43,8 +43,8 @@ add_executable(crossbuild main.cpp
         common/hex.h
         common/base64.cpp
         common/base64.h
-        common/common.cpp
-        common/common.h
+        common/salt.cpp
+        common/salt.h
         common/aes.cpp    
         common/aes.h
         common/rsa.cpp
@@ -89,6 +89,8 @@ add_executable(crossbuild main.cpp
 
         test/test_chacha20.cpp
         test/test_chacha20.h
+        test/test_cache.cpp
+        test/test_cache.h
 )
 
 target_link_libraries(crossbuild
@@ -124,8 +126,8 @@ set(JNI_SOURCE
     common/fast_hex.h
     common/aes.cpp
     common/aes.h
-        common/common.cpp
-        common/common.h
+    common/salt.cpp
+    common/salt.h
 )
 
 add_library(encrypt SHARED

@@ -10,6 +10,8 @@ namespace camel {
     namespace crypto {
         void testEcKeyGen();
         void testEcDHKeyGen();
+        void testHKDFKeyGen();
+        void testECDSASigner();
         void testEcKeyEncrypt();
     }
 }

@@ -9,8 +9,9 @@
 #include "base64.h"
 #include "config.h"
 #include "hex.h"
-#include "openssl/core_names.h"
-#include "openssl/evp.h"
+#include <openssl/core_names.h>
+#include <openssl/evp.h>
+#include <openssl/kdf.h>
 
 
 namespace camel {
@@ -215,6 +216,9 @@ namespace camel {
             if (curveName == "ed448") {
                 return "ED448";
             }
+            if (curveName == "sm2") {
+                return "SM2";
+            }
             return curveNameToUpper(curveNameView);
         }
     }
@@ -231,7 +235,8 @@ namespace camel {
             if (this->curveName == "ED25519"
                 || this->curveName == "X25519"
                 || this->curveName == "ED448"
-                || this->curveName == "X448") {
+                || this->curveName == "X448"
+                || this->curveName == "SM2") {
                 ctx = EVP_PKEY_CTX_new_from_name(nullptr, this->curveName.data(), nullptr);
                 if (!ctx) {
                     std::cerr << " ECKeyPairGenerator Failed to EVP_PKEY_CTX_new_from_name EC" << std::endl;
@@ -449,6 +454,7 @@ namespace camel {
 
 namespace camel {
     namespace crypto {
+        /**
         class ECEvpKeyGuard {
         public:
             explicit ECEvpKeyGuard(EVP_PKEY* evpKey, bool needFree) {
@@ -495,7 +501,7 @@ namespace camel {
                   printOpenSSLError();
                   return false;
               }
-              return true;*/
+              return true;
           }
           if (ecAlgorithmHas(algorithm, "AES-256-GCM")) {
                 std::string mode = "AES-256-GCM";
@@ -513,7 +519,7 @@ namespace camel {
             }
             std::cerr << "ecConfigEncryptParams unsupported mode " << algorithm << std::endl;
             return false;
-        }
+        }*/
     }
 }
 
@@ -543,7 +549,7 @@ namespace camel {
                 printOpenSSLError();
                 return "";
             }
-            ECEvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
+            //ECEvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
 
            // std::cout << EVP_PKEY_supports(evpKey, EVP_PKEY_OP_ENCRYPT) << std::endl;
             //if (EVP_PKEY_id(evpKey) != EVP_PKEY_EC) {
@@ -560,10 +566,10 @@ namespace camel {
 
 
 
-            if (!ecConfigEncryptParams(evpKey, ctx, algorithm)) {
-                EVP_PKEY_CTX_free(ctx);
-                return "";
-            }
+            //if (!ecConfigEncryptParams(evpKey, ctx, algorithm)) {
+            //    EVP_PKEY_CTX_free(ctx);
+            //    return "";
+           // }
 
             std::string buffer;
             int bigBufferSize = plainText.size()*2;
@@ -673,5 +679,320 @@ namespace camel {
         std::string ECDHSharedSecretGenerator::getGenSecretBase64() {
             return base64_encode(genSecret);
         }
+    }
+}
+
+
+namespace camel {
+    namespace crypto {
+        HKDFSecretGenerator::HKDFSecretGenerator(const std::string_view &secret,
+            const std::string_view &infoKey,
+            const std::string_view &salt,
+            const std::string_view &hashName,
+            size_t secretLen) {
+            EVP_KDF * kdf = EVP_KDF_fetch(nullptr, "HKDF", NULL);
+            if (kdf == nullptr) {
+                std::cerr << "HKDFSecretGenerator::HKDFSecretGenerator() Failed to EVP_KDF_fetch HKDF" << std::endl;
+                printOpenSSLError();
+                return;
+            }
+            EVP_KDF_CTX *kctx = EVP_KDF_CTX_new(kdf);
+            if (kctx == nullptr) {
+                std::cerr << "HKDFSecretGenerator::HKDFSecretGenerator() Failed to EVP_KDF_CTX_new " << std::endl;
+                printOpenSSLError();
+                EVP_KDF_free(kdf);
+                return;
+            }
+            {
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_utf8_string(OSSL_KDF_PARAM_DIGEST, (char *)hashName.data(), hashName.size()),
+                    OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_KEY, (void*)secret.data(), secret.size()),
+                    OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_INFO, (void *)infoKey.data(), infoKey.size()),
+                    OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT, (void *)salt.data(), salt.size()),
+                    OSSL_PARAM_END
+                };
+                if (secretLen <= 0) { //auto get gen legnth
+                    const EVP_MD* md = EVP_get_digestbyname(hashName.data());
+                    if (!md) {
+                        std::cerr << "HKDFSecretGenerator::HKDFSecretGenerator() Failed to EVP_get_digestbyname " << hashName << std::endl;
+                        printOpenSSLError();
+                        EVP_KDF_CTX_free(kctx);
+                        EVP_KDF_free(kdf);
+                        return;
+                    }
+                    secretLen = EVP_MD_size(md);
+                }
+                genSecret.resize(secretLen);
+                unsigned char *out = ( unsigned char *)genSecret.data();
+                if (EVP_KDF_derive(kctx, out, secretLen, params) != 1) {
+                    std::cerr << "HKDFSecretGenerator::HKDFSecretGenerator() Failed to EVP_KDF_derive " << hashName << std::endl;
+                    printOpenSSLError();
+                    EVP_KDF_CTX_free(kctx);
+                    EVP_KDF_free(kdf);
+                    return;
+                }
+            }
+        }
+
+        std::string HKDFSecretGenerator::getGenSecret() {
+            return genSecret;
+        }
+
+        std::string HKDFSecretGenerator::getGenSecretHex() {
+            return hex_encode(genSecret);
+        }
+
+        std::string HKDFSecretGenerator::getGenSecretBase64() {
+            return base64_encode(genSecret);
+        }
+
+    }
+}
+
+
+
+namespace camel {
+    namespace crypto {
+
+        class ECEvpKeyGuard {
+        public:
+            explicit ECEvpKeyGuard(EVP_PKEY* evpKey, bool needFree) {
+                this->evpKey = evpKey;
+                this->needFree = needFree;
+            }
+            ~ECEvpKeyGuard() {
+                if (needFree) {
+                    if (evpKey != nullptr) {
+                        EVP_PKEY_free(evpKey);
+                        evpKey = nullptr;
+                    }
+                }
+            }
+        public:
+            ECEvpKeyGuard(ECEvpKeyGuard const&)            = delete;
+            ECEvpKeyGuard& operator=(ECEvpKeyGuard const&) = delete;
+        private:
+            EVP_PKEY* evpKey;
+            bool  needFree;
+        };
+
+        inline bool ECDSAAlgorithmHas(const std::string& algorithm, std::string_view target) {
+            return algorithm.find(target) != std::string::npos;
+        }
+
+        bool configECDSASignParams(EVP_MD_CTX* ctx,  EVP_PKEY* key, const std::string& algorithm) {
+            std::string signHash = OSSL_DIGEST_NAME_SHA2_256;
+            if (ECDSAAlgorithmHas(algorithm,"MD5withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_MD5;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA1withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA1;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA256withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_256;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA384withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_384;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA512withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_512;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA512/224withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_512_224;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA512/256withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_512_256;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA3_256withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA3_256;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA3_384withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA3_384;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA3_512withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA3_512;
+            }
+            OSSL_PARAM params[] = {
+                OSSL_PARAM_END
+            };
+            if (EVP_DigestSignInit_ex(ctx, NULL, signHash.data(), nullptr, nullptr,
+                            key, params) == 0) {
+                printOpenSSLError();
+                return false;
+            }
+            return true;
+        }
+
+         bool configECDSAVerifyParams(EVP_MD_CTX* ctx,  EVP_PKEY* key, const std::string& algorithm) {
+            std::string signHash = OSSL_DIGEST_NAME_SHA2_256;
+            if (ECDSAAlgorithmHas(algorithm,"MD5withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_MD5;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA1withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA1;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA256withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_256;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA384withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_384;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA512withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_512;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA512/224withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_512_224;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA512/256withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA2_512_256;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA3_256withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA3_256;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA3_384withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA3_384;
+            } else if (ECDSAAlgorithmHas(algorithm,"SHA3_512withECDSA")) {
+                signHash = OSSL_DIGEST_NAME_SHA3_512;
+            }
+            OSSL_PARAM params[] = {
+                OSSL_PARAM_END
+            };
+            if (EVP_DigestVerifyInit_ex(ctx, NULL, signHash.data(), nullptr, nullptr,
+                            key, params) == 0) {
+                printOpenSSLError();
+                return false;
+            }
+            return true;
+        }
+
+    }
+}
+
+
+
+namespace camel {
+    namespace crypto {
+        ECDSAPrivateKeySigner::ECDSAPrivateKeySigner(const std::string_view& privateKey,
+                  const std::string_view& format,
+                  const std::string_view& algorithm) {
+            this->algorithm = algorithm;
+            this->format = format;
+            this->privateKey = privateKey;
+            this->externalEvpKey = nullptr;
+        }
+
+
+        std::string ECDSAPrivateKeySigner::sign(const std::string_view &plainText) const {
+            if (plainText.empty()) {
+                return "";
+            }
+
+            EVP_PKEY* evpKey = externalEvpKey;
+            if (evpKey == nullptr) {
+                evpKey = ECPrivateKeyFrom(privateKey, format);
+            }
+            if (evpKey == nullptr) {
+                std::cerr << "ECDSAPrivateKeySigner::sign() Failed to create EVP_PKEY " << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            ECEvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
+
+            EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+            if (ctx == nullptr) {
+                std::cerr << "ECDSAPrivateKeySigner::sign() Failed to create EVP_MD_CTX_new() " << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            if (!configECDSASignParams(ctx, evpKey, algorithm)) {
+                EVP_MD_CTX_free(ctx);
+                return "";
+            }
+            if (EVP_DigestSignUpdate(ctx, plainText.data(), plainText.size()) == 0) {
+                std::cerr << "ECDSAPrivateKeySigner::sign() Failed to EVP_DigestSignUpdate " << std::endl;
+                printOpenSSLError();
+                EVP_MD_CTX_free(ctx);
+                return "";
+            }
+
+            std::string buffer;
+            buffer.resize(1024); // 目前secp521r1, 最大 150字节以内
+            unsigned char *out = (unsigned char*) buffer.data();
+            size_t outlen =  buffer.size();
+            if (EVP_DigestSignFinal(ctx, out, &outlen) == 0) {
+                std::cerr << "ECDSAPrivateKeySigner::sign() Failed to EVP_DigestSignFinal " << std::endl;
+                printOpenSSLError();
+                EVP_MD_CTX_free(ctx);
+                return "";
+            }
+            EVP_MD_CTX_free(ctx);
+            buffer.resize(outlen);
+
+            return buffer;
+        }
+
+        std::string ECDSAPrivateKeySigner::signToHex(const std::string_view &plainText) const {
+            return hex_encode(sign(plainText));
+        }
+
+        std::string ECDSAPrivateKeySigner::signToBase64(const std::string_view &plainText) const {
+            return base64_encode(sign(plainText));
+        }
+
+    }
+}
+
+
+
+namespace camel {
+    namespace crypto {
+        ECDSAPublicKeyVerifier::ECDSAPublicKeyVerifier(const std::string_view& publicKey,
+                  const std::string_view& format,
+                  const std::string_view& algorithm) {
+            this->algorithm = algorithm;
+            this->format = format;
+            this->publicKey = publicKey;
+        }
+
+
+        bool ECDSAPublicKeyVerifier::verifySign(const std::string_view &sign, const std::string_view &data) const {
+            if (sign.empty()
+                || data.empty()) {
+                return false;
+            }
+
+            EVP_PKEY* evpKey = externalEvpKey;
+            if (evpKey == nullptr) {
+                evpKey = ECPublicKeyFrom(publicKey, format);
+            }
+            if (evpKey == nullptr) {
+                std::cerr << "ECDSAPublicKeyVerifier::verifySign() Failed to create EVP_PKEY " << std::endl;
+                printOpenSSLError();
+                return false;
+            }
+            ECEvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
+
+            EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+            if (ctx == nullptr) {
+                std::cerr << "ECDSAPublicKeyVerifier::verifySign() Failed to create EVP_MD_CTX_new() " << std::endl;
+                printOpenSSLError();
+                return false;
+            }
+            if (!configECDSAVerifyParams(ctx, evpKey, algorithm)) {
+                EVP_MD_CTX_free(ctx);
+                return false;
+            }
+            if (EVP_DigestVerifyUpdate(ctx, data.data(), data.size()) == 0) {
+                std::cerr << "ECDSAPublicKeyVerifier::verifySign() Failed to EVP_DigestVerifyUpdate " << std::endl;
+                printOpenSSLError();
+                EVP_MD_CTX_free(ctx);
+                return false;
+            }
+
+            unsigned char *signData = (unsigned char*) sign.data();
+            if (EVP_DigestVerifyFinal(ctx, signData, sign.size()) == 0) {
+                std::cerr << "ECDSAPublicKeyVerifier::verifySign() Failed to EVP_DigestVerifyFinal " << std::endl;
+                printOpenSSLError();
+                EVP_MD_CTX_free(ctx);
+                return false;
+            }
+            EVP_MD_CTX_free(ctx);
+            return true;
+        }
+
+        bool ECDSAPublicKeyVerifier::verifyHexSign(const std::string_view &hexSign, const std::string_view &data) const {
+            std::string sign = hex_decode(hexSign);
+            return verifySign(sign, data);
+        }
+
+
+        bool ECDSAPublicKeyVerifier::verifyBase64Sign(const std::string_view &base64Sign, const std::string_view &data) const {
+            std::string sign = base64_decode_url_safe(base64Sign);
+            return verifySign(sign, data);
+        }
+
     }
 }

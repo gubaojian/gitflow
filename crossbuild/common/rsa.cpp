@@ -7,7 +7,7 @@
 #include <openssl/rsa.h>
 
 #include "base64.h"
-#include "common.h"
+#include "salt.h"
 #include "hex.h"
 #include "openssl/core_names.h"
 
@@ -581,7 +581,7 @@ namespace camel {
             } else if (rsaAlgorithmHas(algorithm,"SHA384withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_384;
             } else if (rsaAlgorithmHas(algorithm,"SHA512withRSA")) {
-                signHash = OSSL_DIGEST_NAME_SHA2_256;
+                signHash = OSSL_DIGEST_NAME_SHA2_512;
             } else if (rsaAlgorithmHas(algorithm,"SHA512/224withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_512_224;
             } else if (rsaAlgorithmHas(algorithm,"SHA512/256withRSA")) {
@@ -622,7 +622,7 @@ namespace camel {
             } else if (rsaAlgorithmHas(algorithm,"SHA384withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_384;
             } else if (rsaAlgorithmHas(algorithm,"SHA512withRSA")) {
-                signHash = OSSL_DIGEST_NAME_SHA2_256;
+                signHash = OSSL_DIGEST_NAME_SHA2_512;
             } else if (rsaAlgorithmHas(algorithm,"SHA512/224withRSA")) {
                 signHash = OSSL_DIGEST_NAME_SHA2_512_224;
             } else if (rsaAlgorithmHas(algorithm,"SHA512/256withRSA")) {

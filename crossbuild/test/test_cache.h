@@ -1,10 +1,11 @@
 //
-// Created by efurture on 25-8-16.
+// Created by baojian on 2025/8/22.
 //
 
-#ifndef CAMEL_COMMON_H
-#define CAMEL_COMMON_H
+#ifndef CROSSBUILD_TEST_CACHE_H
+#define CROSSBUILD_TEST_CACHE_H
 #include <string>
+
 #include "openssl/types.h"
 
 
@@ -27,4 +28,4 @@ namespace camel {
 
 
 
-#endif //COMMON_H
+#endif //CROSSBUILD_TEST_CACHE_H
