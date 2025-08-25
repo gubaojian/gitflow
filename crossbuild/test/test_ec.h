@@ -13,7 +13,8 @@ namespace camel {
         void testHKDFKeyGen();
         void testECDSASigner();
         void testEDDSASigner();
-        void testEcKeyEncrypt();
+        void testECIESEncrypt();
+        void testECIESPerf();
     }
 }
 

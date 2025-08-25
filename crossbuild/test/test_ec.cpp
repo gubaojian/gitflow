@@ -375,24 +375,207 @@ namespace camel {
             }
         }
 
-        void testEcKeyEncrypt() {
+
+        void testECIESEncrypt() {
             bool passed = true;
             {
                 std::string plainText = "hello world ec";
-                ECKeyPairGenerator generator("SM2");
-                ECPublicKeyEncryptor encryptor(generator.getPemPublicKey(), "pem", "AES-256-GCM");
-                std::cout << encryptor.encryptToBase64(plainText) << std::endl;
+                ECKeyPairGenerator keyGenerator("secp256r1");
+                ECIESPublicKeyEncryptor encryptor(keyGenerator.getBase64PublicKey(), "base64", "AES/GCM/NoPadding");
+                ECIESPrivateKeyDecryptor decryptor(keyGenerator.getBase64PrivateKey(), "base64", "AES/GCM/NoPadding");
+                std::cout << "------------ ECIESPublicKeyEncryptor ECIESPrivateKeyDecryptor secp256r1 check1  ------------" << std::endl;
+                std::string encryptedText = encryptor.encrypt(plainText);
+                std::cout << encryptedText  << std::endl;
+                std::cout << decryptor.decrypt(encryptedText) << std::endl;
+
+                passed = passed && (decryptor.decrypt(encryptedText) == plainText);
+
+            }
+
+            {
+                std::string plainText = "hello world ec";
+                for (int i=0; i<512; i++) {
+                    plainText.append("长文本测试");
+                }
+                ECKeyPairGenerator keyGenerator("secp256r1");
+                ECIESPublicKeyEncryptor encryptor(keyGenerator.getBase64PublicKey(), "base64", "AES/GCM/NoPadding");
+                ECIESPrivateKeyDecryptor decryptor(keyGenerator.getBase64PrivateKey(), "base64", "AES/GCM/NoPadding");
+                std::cout << "------------ ECIESPublicKeyEncryptor ECIESPrivateKeyDecryptor secp256r1 check2  ------------" << std::endl;
+                std::string encryptedText = encryptor.encrypt(plainText);
+                std::cout << encryptedText  << std::endl;
+                std::cout << decryptor.decrypt(encryptedText) << std::endl;
+
+                passed = passed && (decryptor.decrypt(encryptedText) == plainText);
+
+            }
+
+            {
+                std::string plainText = "hello world ec";
+                ECKeyPairGenerator keyGenerator("secp521r1");
+                ECIESPublicKeyEncryptor encryptor(keyGenerator.getBase64PublicKey(), "base64", "AES/GCM/NoPadding");
+                ECIESPrivateKeyDecryptor decryptor(keyGenerator.getBase64PrivateKey(), "base64", "AES/GCM/NoPadding");
+                std::cout << "------------ ECIESPublicKeyEncryptor ECIESPrivateKeyDecryptor secp521r1 check1  ------------" << std::endl;
+                std::string encryptedText = encryptor.encrypt(plainText);
+                std::cout << encryptedText  << std::endl;
+                std::cout << decryptor.decrypt(encryptedText) << std::endl;
+
+                passed = passed && (decryptor.decrypt(encryptedText) == plainText);
+
+            }
+
+            {
+                std::string plainText = "hello world ec";
+                ECKeyPairGenerator keyGenerator("x25519");
+                ECIESPublicKeyEncryptor encryptor(keyGenerator.getBase64PublicKey(), "base64", "AES/GCM/NoPadding");
+                ECIESPrivateKeyDecryptor decryptor(keyGenerator.getBase64PrivateKey(), "base64", "AES/GCM/NoPadding");
+                std::cout << "------------ ECIESPublicKeyEncryptor ECIESPrivateKeyDecryptor x25519 check1  ------------" << std::endl;
+                std::string encryptedText = encryptor.encrypt(plainText);
+                std::cout << encryptedText  << std::endl;
+                std::cout << decryptor.decrypt(encryptedText) << std::endl;
+
+                passed = passed && (decryptor.decrypt(encryptedText) == plainText);
+
+            }
+
+            {
+                std::string plainText = "hello world ec";
+                ECKeyPairGenerator keyGenerator("secp256k1");
+                ECIESPublicKeyEncryptor encryptor(keyGenerator.getBase64PublicKey(), "base64", "AES/GCM/NoPadding");
+                ECIESPrivateKeyDecryptor decryptor(keyGenerator.getBase64PrivateKey(), "base64", "AES/GCM/NoPadding");
+                std::cout << "------------ ECIESPublicKeyEncryptor ECIESPrivateKeyDecryptor secp256k1 check1  ------------" << std::endl;
+                std::string encryptedText = encryptor.encrypt(plainText);
+                std::cout << encryptedText  << std::endl;
+                std::cout << decryptor.decrypt(encryptedText) << std::endl;
+
+                passed = passed && (decryptor.decrypt(encryptedText) == plainText);
+
+            }
+
+            if (passed) {
+                std::cout << "testECIESEncrypt() passed " << std::endl;
+            } else {
+                std::cout << "testECIESEncrypt() failed " << std::endl;
+            }
+        }
+
+        void testECIESPerf() {
+            bool passed = true;
+            {
+                std::string plainText = "hello world ec";
+                for (int i=0; i<128; i++) {
+                    plainText.append("加密测试");
+                }
+                ECKeyPairGenerator keyGenerator("secp256r1");
+                ECIESPublicKeyEncryptor encryptor(keyGenerator.getBase64PublicKey(), "base64", "AES/GCM/NoPadding");
+                ECIESPrivateKeyDecryptor decryptor(keyGenerator.getBase64PrivateKey(), "base64", "AES/GCM/NoPadding");
+                std::string encryptedText = encryptor.encrypt(plainText);
+                std::cout << "------------ ECIESPublicKeyEncryptor Performance check1  ------------" << std::endl;
+                {
+                    auto start = std::chrono::high_resolution_clock::now();
+                    auto end = std::chrono::high_resolution_clock::now();
+                    auto used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    start = std::chrono::high_resolution_clock::now();
+                    int test_count = 10000;
+                    for(int i=0; i<test_count; i++) {
+                        encryptor.encrypt(plainText);
+                    }
+                    end = std::chrono::high_resolution_clock::now();
+                    used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    std::cout << "ECIESPublicKeyEncryptor secp256r1 encrypt " <<  used.count() << " ms, times " << test_count << std::endl;
+                }
+                {
+                    auto start = std::chrono::high_resolution_clock::now();
+                    auto end = std::chrono::high_resolution_clock::now();
+                    auto used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    start = std::chrono::high_resolution_clock::now();
+                    int test_count = 10000;
+                    for(int i=0; i<test_count; i++) {
+                        decryptor.decrypt(encryptedText);
+                    }
+                    end = std::chrono::high_resolution_clock::now();
+                    used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    std::cout << "ECIESPrivateKeyDecryptor secp256r1 decrypt " <<  used.count() << " ms, times " << test_count << std::endl;
+                }
             }
             {
                 std::string plainText = "hello world ec";
-                ECKeyPairGenerator generator("Ed25519");
-                ECPublicKeyEncryptor encryptor(generator.getPemPublicKey(), "pem", "AES-256-GCM");
-                std::cout << encryptor.encryptToBase64(plainText) << std::endl;
+                for (int i=0; i<128; i++) {
+                    plainText.append("加密测试");
+                }
+                ECKeyPairGenerator keyGenerator("X25519");
+                ECIESPublicKeyEncryptor encryptor(keyGenerator.getBase64PublicKey(), "base64", "AES/GCM/NoPadding");
+                ECIESPrivateKeyDecryptor decryptor(keyGenerator.getBase64PrivateKey(), "base64", "AES/GCM/NoPadding");
+                std::string encryptedText = encryptor.encrypt(plainText);
+                std::cout << "------------ ECIESPublicKeyEncryptor Performance check2  ------------" << std::endl;
+                {
+                    auto start = std::chrono::high_resolution_clock::now();
+                    auto end = std::chrono::high_resolution_clock::now();
+                    auto used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    start = std::chrono::high_resolution_clock::now();
+                    int test_count = 10000;
+                    for(int i=0; i<test_count; i++) {
+                        encryptor.encrypt(plainText);
+                    }
+                    end = std::chrono::high_resolution_clock::now();
+                    used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    std::cout << "ECIESPublicKeyEncryptor X25519 encrypt " <<  used.count() << " ms, times " << test_count << std::endl;
+                }
+                {
+                    auto start = std::chrono::high_resolution_clock::now();
+                    auto end = std::chrono::high_resolution_clock::now();
+                    auto used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    start = std::chrono::high_resolution_clock::now();
+                    int test_count = 10000;
+                    for(int i=0; i<test_count; i++) {
+                        decryptor.decrypt(encryptedText);
+                    }
+                    end = std::chrono::high_resolution_clock::now();
+                    used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    std::cout << "ECIESPrivateKeyDecryptor X25519 decrypt " <<  used.count() << " ms, times " << test_count << std::endl;
+                }
+            }
+
+            {
+                std::string plainText = "hello world ec";
+                for (int i=0; i<128; i++) {
+                    plainText.append("加密测试");
+                }
+                ECKeyPairGenerator keyGenerator("x448");
+                ECIESPublicKeyEncryptor encryptor(keyGenerator.getBase64PublicKey(), "base64", "AES/GCM/NoPadding");
+                ECIESPrivateKeyDecryptor decryptor(keyGenerator.getBase64PrivateKey(), "base64", "AES/GCM/NoPadding");
+                std::string encryptedText = encryptor.encrypt(plainText);
+                std::cout << "------------ ECIESPublicKeyEncryptor Performance check3  ------------" << std::endl;
+                {
+                    auto start = std::chrono::high_resolution_clock::now();
+                    auto end = std::chrono::high_resolution_clock::now();
+                    auto used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    start = std::chrono::high_resolution_clock::now();
+                    int test_count = 10000;
+                    for(int i=0; i<test_count; i++) {
+                        encryptor.encrypt(plainText);
+                    }
+                    end = std::chrono::high_resolution_clock::now();
+                    used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    std::cout << "ECIESPublicKeyEncryptor x448 encrypt " <<  used.count() << " ms, times " << test_count << std::endl;
+                }
+                {
+                    auto start = std::chrono::high_resolution_clock::now();
+                    auto end = std::chrono::high_resolution_clock::now();
+                    auto used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    start = std::chrono::high_resolution_clock::now();
+                    int test_count = 10000;
+                    for(int i=0; i<test_count; i++) {
+                        decryptor.decrypt(encryptedText);
+                    }
+                    end = std::chrono::high_resolution_clock::now();
+                    used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    std::cout << "ECIESPrivateKeyDecryptor x448 decrypt " <<  used.count() << " ms, times " << test_count << std::endl;
+                }
             }
             if (passed) {
-                std::cout << "testEcKeyEncrypt() passed " << std::endl;
+                std::cout << "testECIESPerf() passed " << std::endl;
             } else {
-                std::cout << "testEcKeyEncrypt() failed " << std::endl;
+                std::cout << "testECIESPerf() failed " << std::endl;
             }
         }
 

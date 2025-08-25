@@ -65,7 +65,9 @@ void runAllDemos() {
    // testEcKeyEncrypt();
 
 
+    testECIESEncrypt();
 
+    testECIESPerf();
 
 
 }

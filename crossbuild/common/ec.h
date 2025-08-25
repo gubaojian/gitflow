@@ -68,6 +68,8 @@ namespace camel {
             std::string getBase64PrivateKey();
             std::string getPemPublicKey();
             std::string getPemPrivateKey();
+            std::string getPublicKey(const std::string_view& format);
+            std::string getPrivateKey(const std::string_view& format);
         public:
             ECKeyPairGenerator(const ECKeyPairGenerator&) = delete;
             ECKeyPairGenerator& operator=(const ECKeyPairGenerator&) = delete;
@@ -79,44 +81,8 @@ namespace camel {
             std::string curveName;
         };
 
-        class ECPublicKeyEncryptor {
-        public:
-            /**
-             * https://developer.android.com/reference/javax/crypto/Cipher
-            * format = "pem", "hex", "base64", "der"
-             */
-            explicit ECPublicKeyEncryptor(const std::string_view& publicKey,
-                 const std::string_view& format = "pem", const std::string_view& algorithm = "AES-256-GCM");
-
-            ~ECPublicKeyEncryptor() = default;
-
-        public:
-            std::string encrypt(const std::string_view& plainText) const;
-            std::string encryptToBase64(const std::string_view& plainText) const;
-            std::string encryptToHex(const std::string_view& plainText) const;
-        public:
-            /**
-             * 外部提供的EVP_PKEY指针，如果指定则不再加载默认秘钥.不指定则，加载默认秘钥
-             *  外部自己负责释放，管理EVP_PKEY生命周期，用于复用EVP_PKEY秘钥，避免重复加载，高性能等场景。
-             *  有效提升加密性能，可多个Encryptor通setExternalEvpKey设置相同共用，显著提升性能。
-             * @param pkey
-             */
-            void setExternalEvpKey(EVP_PKEY* pkey) {
-                this->externalEvpKey = pkey;
-            }
-        private:
-            std::string publicKey;
-            std::string format;
-            std::string algorithm;
-        private:
-            EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
-        };
-
     }
 }
-
-
-
 
 
 namespace camel {
@@ -322,45 +288,30 @@ namespace camel {
 }
 
 
-
-
 namespace camel {
     namespace crypto {
-        class ECIESPrivateKeySigner {
+        class ECIESPrivateKeyDecryptor {
             public:
                 /**
                   *  支持的曲线： NIST 曲线：secp256r1（P-256）、secp384r1（P-384）、secp521r1（P-521）
                   *  区块链常用：secp256k1
                   *  其它： x25519/x448：专门用于 ECDH 密钥交换（基于 Montgomery 曲线优化）。
                   * format = "pem", "hex", "base64", "der"
-                  * 默认用AES-256-GCM对层加密算法进行加密
+                  *默认用256位秘钥，aesAlgorithm  支持 AES/GCM/NoPadding、AES/GCM-SIV/NoPadding AES/CCM/NoPadding AES/CBC/PKCS5Padding
                    */
-                explicit ECIESPrivateKeySigner(const std::string_view& privateKey,
+                explicit ECIESPrivateKeyDecryptor(const std::string_view& privateKey,
                       const std::string_view& format = "pem",
-                      const std::string_view& algorithm = "SHA256withECDSA");
-                ~ECIESPrivateKeySigner() = default;
+                      const std::string_view& cipherAlgorithm = "AES/GCM/NoPadding");
+                ~ECIESPrivateKeyDecryptor() = default;
             public:
-                ECIESPrivateKeySigner(const ECIESPrivateKeySigner&) = delete;
-                ECIESPrivateKeySigner& operator=(const ECIESPrivateKeySigner&) = delete;
+                ECIESPrivateKeyDecryptor(const ECIESPrivateKeyDecryptor&) = delete;
+                ECIESPrivateKeyDecryptor& operator=(const ECIESPrivateKeyDecryptor&) = delete;
             public:
-                std::string sign(const std::string_view& plainText) const;
-                std::string signToBase64(const std::string_view& plainText) const;
-                std::string signToHex(const std::string_view& plainText) const;
-            public:
-                /**
-                 * 外部提供的EVP_PKEY指针，如果指定则不再加载默认秘钥.不指定则，加载默认秘钥
-                 *  外部自己负责释放，管理EVP_PKEY生命周期，用于复用EVP_PKEY秘钥，避免重复加载，高性能等场景
-                 * @param pkey
-                 */
-                void setExternalEvpKey(EVP_PKEY* pkey) {
-                    this->externalEvpKey = pkey;
-                }
+                std::string decrypt(const std::string_view& combineBase64Data);
             private:
                 std::string privateKey;
                 std::string format;
-                std::string algorithm;
-            private:
-                EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
+                std::string cipherAlgorithm;
         };
     }
 }
@@ -368,44 +319,29 @@ namespace camel {
 
 namespace camel {
     namespace crypto {
-        class ECDSAPublicKeyVerifier {
+        class ECIESPublicKeyEncryptor {
         public:
             /**
               *  支持的曲线： NIST 曲线：secp256r1（P-256）、secp384r1（P-384）、secp521r1（P-521）
               *  区块链常用：secp256k1
-              * format = "pem", "hex", "base64", "der"
-              * algorithm
-              * MD5withRSA SHA1withRSA SHA256withRSA SHA384withRSA SHA512withRSA
-              * SHA512/224withRSA SHA512/256withRSA
-              * SHA3_256withRSA SHA3_384withRSA SHA3_512withRSA
-              *  or pre algorithm add /PSS SHA256withRSA/PSS
+              *  其它： x25519/x448：专门用于 ECDH 密钥交换（基于 Montgomery 曲线优化）。
+              * format = "pem", "hex", "base64", "raw"
+              * 默认用256位秘钥，aesAlgorithm  支持 AES/GCM/NoPadding、AES/GCM-SIV/NoPadding AES/CCM/NoPadding AES/CBC/PKCS5Padding
                */
-            explicit ECDSAPublicKeyVerifier(const std::string_view& publicKey,
+            explicit ECIESPublicKeyEncryptor(const std::string_view& publicKey,
                   const std::string_view& format = "pem",
-                  const std::string_view& algorithm = "SHA256withRSA");
-            ~ECDSAPublicKeyVerifier() = default;
+                  const std::string_view& cipherAlgorithm = "AES/GCM/NoPadding");
+            ~ECIESPublicKeyEncryptor() = default;
         public:
-            ECDSAPublicKeyVerifier(const ECDSAPublicKeyVerifier&) = delete;
-            ECDSAPublicKeyVerifier& operator=(const ECDSAPublicKeyVerifier&) = delete;
+            ECIESPublicKeyEncryptor(const ECIESPublicKeyEncryptor&) = delete;
+            ECIESPublicKeyEncryptor& operator=(const ECIESPublicKeyEncryptor&) = delete;
         public:
-            bool verifySign(const std::string_view& sign, const std::string_view& data) const;
-            bool verifyHexSign(const std::string_view& hexSign, const std::string_view& data) const;
-            bool verifyBase64Sign(const std::string_view& base64Sign, const std::string_view& data) const;
-        public:
-            /**
-             * 外部提供的EVP_PKEY指针，如果指定则不再加载默认秘钥.不指定则，加载默认秘钥
-             *  外部自己负责释放，管理EVP_PKEY生命周期，用于复用EVP_PKEY秘钥，避免重复加载，高性能等场景
-             * @param pkey
-             */
-            void setExternalEvpKey(EVP_PKEY* pkey) {
-                this->externalEvpKey = pkey;
-            }
+            //结果为 base64(encryptdata + info (16) + salt(16)) + "." + base64(publicKey)
+            std::string encrypt(const std::string_view& plainText) const;
         private:
             std::string publicKey;
             std::string format;
-            std::string algorithm;
-        private:
-            EVP_PKEY* externalEvpKey = nullptr; //外部key，外部自己管理生命周期。
+            std::string cipherAlgorithm;
         };
 
     }

@@ -44,7 +44,7 @@ namespace camel {
             */
             explicit AESEncryptor(const std::string& algorithm,
                               const std::string_view& secret,
-                              const std::string& format    = CAMEL_KEY_FORMAT_BASE64);
+                              const std::string& format    = "base64");
             ~AESEncryptor() = default;
             public:
                 std::string encrypt(const std::string_view& plainText) const;

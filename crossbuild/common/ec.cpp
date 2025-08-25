@@ -9,9 +9,12 @@
 #include "base64.h"
 #include "config.h"
 #include "hex.h"
+#include "aes.h"
+
 #include <openssl/core_names.h>
 #include <openssl/evp.h>
 #include <openssl/kdf.h>
+#include <openssl/rand.h>
 
 
 namespace camel {
@@ -79,7 +82,7 @@ namespace camel {
                 return ECPublicKeyFromHex(publicKey);
             } else if ("base64" == format) {
                 return ECPublicKeyFromBase64(publicKey);
-            } else if ("der" == format) {
+            } else if ("der" == format || format == "raw") {
                 return ECPublicKeyFromDer(publicKey);
             } else if ("pem" == format) {
                 return ECPublicKeyFromPem(publicKey);
@@ -150,7 +153,7 @@ namespace camel {
                 return ECPrivateKeyFromHex(privateKey);
             } else if ("base64" == format) {
                 return ECPrivateKeyFromBase64(privateKey);
-            } else if ("der" == format) {
+            } else if ("der" == format || format == "raw") {
                return ECPrivateKeyFromDer(privateKey);
             } else if ("pem" == format) {
                return ECPrivateKeyFromPem(privateKey);
@@ -223,6 +226,7 @@ namespace camel {
         }
     }
 }
+
 
 
 namespace camel {
@@ -449,157 +453,36 @@ namespace camel {
             return publicKey;
         }
 
+        std::string ECKeyPairGenerator::getPublicKey(const std::string_view& format) {
+            if ("hex" == format) {
+                return getHexPublicKey();
+            } else if ("base64" == format) {
+                return getBase64PublicKey();
+            } else if ("der" == format || format == "raw") {
+                return getPublicKey();
+            } else if ("pem" == format) {
+                return getPemPublicKey();
+            } else {
+                return getPublicKey();
+            }
+        }
+        std::string ECKeyPairGenerator::getPrivateKey(const std::string_view& format) {
+            if ("hex" == format) {
+                return getHexPrivateKey();
+            } else if ("base64" == format) {
+                return getBase64PrivateKey();
+            } else if ("der" == format || format == "raw") {
+                return getPrivateKey();
+            } else if ("pem" == format) {
+                return getPemPrivateKey();
+            } else {
+                return getPrivateKey();
+            }
+        }
+
     }
 }
 
-namespace camel {
-    namespace crypto {
-        /**
-        class ECEvpKeyGuard {
-        public:
-            explicit ECEvpKeyGuard(EVP_PKEY* evpKey, bool needFree) {
-                this->evpKey = evpKey;
-                this->needFree = needFree;
-            }
-            ~ECEvpKeyGuard() {
-                if (needFree) {
-                    if (evpKey != nullptr) {
-                        EVP_PKEY_free(evpKey);
-                        evpKey = nullptr;
-                    }
-                }
-            }
-        public:
-            ECEvpKeyGuard(ECEvpKeyGuard const&)            = delete;
-            ECEvpKeyGuard& operator=(ECEvpKeyGuard const&) = delete;
-        private:
-            EVP_PKEY* evpKey;
-            bool  needFree;
-        };
-
-        inline bool ecAlgorithmHas(const std::string& algorithm, std::string_view target) {
-            return algorithm.find(target) != std::string::npos;
-        }
-
-        # define EC_OSSL_PARAM_KDF_DIGEST "kdf-digest"
-        # define EC_OSSL_PARAM_KDF_DIGEST_PROPS "kdf-digest-props"
-        # define EC_OSSL_PARAM_KDF_OUTLEN "kdf-outlen"
-        # define EC_OSSL_PARAM_KDF_TYPE "kdf-type"
-        # define EC_OSSL_PARAM_KDF_UKM "kdf-ukm"
-
-        bool ecConfigEncryptParams(EVP_PKEY* evpKey, EVP_PKEY_CTX *ctx, const std::string& algorithm) {
-          if (EVP_PKEY_id(evpKey) == EVP_PKEY_SM2) {
-              /**
-              std::string mode = "AES-256-GCM";
-              OSSL_PARAM params[] = {
-                  OSSL_PARAM_construct_utf8_string(OSSL_PKEY_PARAM_CIPHER, "sm4-cbc", 0), // 国密推荐 SM4
-        OSSL_PARAM_construct_utf8_string(OSSL_PKEY_PARAm, "sm3", 0),
-                OSSL_PARAM_END
-               };
-              if (EVP_PKEY_CTX_set_params(ctx, params) <= 0) {
-                  std::cerr << "ecConfigEncryptParams Failed to EVP_PKEY_CTX_set_params" << algorithm << std::endl;
-                  printOpenSSLError();
-                  return false;
-              }
-              return true;
-          }
-          if (ecAlgorithmHas(algorithm, "AES-256-GCM")) {
-                std::string mode = "AES-256-GCM";
-                OSSL_PARAM params[] = {
-                     OSSL_PARAM_construct_utf8_string(OSSL_PKEY_PARAM_CIPHER, mode.data(), mode.size()),
-                    OSSL_PARAM_construct_utf8_string(EC_OSSL_PARAM_KDF_TYPE, mode.data(), mode.size()),
-                  OSSL_PARAM_END
-                 };
-                if (EVP_PKEY_encrypt_init_ex(ctx, params) <= 0) {
-                    std::cerr << "ecConfigEncryptParams Failed to EVP_PKEY_CTX_set_params" << algorithm << std::endl;
-                    printOpenSSLError();
-                    return false;
-                }
-                return true;
-            }
-            std::cerr << "ecConfigEncryptParams unsupported mode " << algorithm << std::endl;
-            return false;
-        }*/
-    }
-}
-
-namespace camel {
-    namespace crypto {
-
-        ECPublicKeyEncryptor::ECPublicKeyEncryptor(const std::string_view &publicKey,
-            const std::string_view &format,
-            const std::string_view& algorithm) {
-            this->format = format;
-            this->algorithm = algorithm;
-            this->publicKey = publicKey;
-            this->externalEvpKey = nullptr;
-            std::transform(this->algorithm.begin(), this->algorithm.end(), this->algorithm.begin(), ::toupper);
-        }
-
-        std::string ECPublicKeyEncryptor::encrypt(const std::string_view &plainText) const {
-            if (plainText.empty()) {
-                return "";
-            }
-            EVP_PKEY* evpKey = externalEvpKey;
-            if (evpKey == nullptr) {
-                evpKey = ECPublicKeyFrom(publicKey, format);
-            }
-            if (evpKey == nullptr) {
-                std::cerr << "ECPublicKeyEncryptor::decrypt() Failed to create EVP_PKEY_CTX_new " << std::endl;
-                printOpenSSLError();
-                return "";
-            }
-            //ECEvpKeyGuard evpKeyGuard(evpKey, externalEvpKey == nullptr);
-
-           // std::cout << EVP_PKEY_supports(evpKey, EVP_PKEY_OP_ENCRYPT) << std::endl;
-            //if (EVP_PKEY_id(evpKey) != EVP_PKEY_EC) {
-             //   std::cerr << "ECPublicKeyEncryptor::encrypt() not EVP_PKEY_EC key" << std::endl;
-            //    printOpenSSLError();
-            //    return "";
-            //}
-            EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_from_pkey(nullptr, evpKey, nullptr);
-            if (ctx == nullptr) {
-                std::cerr << "ECPublicKeyEncryptor::encrypt() Failed to create EVP_PKEY_CTX_new_from_pkey" << std::endl;
-                printOpenSSLError();
-                return "";
-            }
-
-
-
-            //if (!ecConfigEncryptParams(evpKey, ctx, algorithm)) {
-            //    EVP_PKEY_CTX_free(ctx);
-            //    return "";
-           // }
-
-            std::string buffer;
-            int bigBufferSize = plainText.size()*2;
-            buffer.resize(std::max(bigBufferSize, 2048));
-            unsigned char *in = (unsigned char *)plainText.data();
-            unsigned char *out = (unsigned char *)buffer.data();
-            size_t totalLength = 0;
-            size_t outlen = buffer.size() - totalLength;
-            if (EVP_PKEY_encrypt(ctx, out, &outlen, in, plainText.size()) <= 0) {
-                std::cerr << "ECPublicKeyEncryptor::encrypt() Failed to EVP_PKEY_encrypt " << std::endl;
-                printOpenSSLError();
-                EVP_PKEY_CTX_free(ctx);
-                return "";
-            }
-            totalLength += outlen;
-            buffer.resize(totalLength);
-            EVP_PKEY_CTX_free(ctx);
-            return buffer;
-        }
-
-
-        std::string ECPublicKeyEncryptor::encryptToBase64(const std::string_view &plainText) const {
-            return base64_encode(encrypt(plainText));
-        }
-
-        std::string ECPublicKeyEncryptor::encryptToHex(const std::string_view &plainText) const {
-            return hex_encode(encrypt(plainText));
-        }
-    }
-}
 
 namespace camel {
     namespace crypto {
@@ -1158,6 +1041,194 @@ namespace camel {
             std::string sign = base64_decode_url_safe(base64Sign);
             return verifySign(sign, data);
         }
+
+    }
+}
+
+namespace camel {
+    namespace crypto {
+        std::string getCurveName(EVP_PKEY* evpKey) {
+            int pkey_id = EVP_PKEY_id(evpKey);
+
+            //特殊椭圆曲线
+            if (pkey_id == EVP_PKEY_X25519) {
+                return "X25519";
+            } else if (pkey_id == EVP_PKEY_X448) {
+                return "X448";
+            } else if (pkey_id == EVP_PKEY_ED25519) {
+                return "ED25519";
+            } else if (pkey_id == EVP_PKEY_ED448) {
+                return "ED448";
+            }
+
+            // pkey_id == EVP_PKEY_EC
+            // 传统椭圆曲线
+
+            std::string curveName;
+            curveName.resize(128);
+            size_t outlen = 0;
+            if (!EVP_PKEY_get_utf8_string_param(evpKey, OSSL_PKEY_PARAM_GROUP_NAME,
+                                       curveName.data(), curveName.size(),
+                                       &outlen)) {
+                std::cerr << "ECIES getCurveName Failed to EVP_PKEY_get_utf8_string_param " << std::endl;
+                printOpenSSLError();
+                return "";
+           }
+            curveName.resize(outlen);
+            return curveName;
+        }
+
+        std::string ecRandBytesLen(size_t len) {
+            std::string buffer(len, '\0');
+            unsigned char* iv = (unsigned char* )buffer.data();
+            if (RAND_bytes(iv, len) != 1) {
+                std::cerr << "ecRandBytesLen failed" << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            return buffer;
+        }
+    }
+}
+
+namespace camel {
+    namespace crypto {
+        inline std::string ECPrivateKeyToPKCS8(EVP_PKEY* pkey) {
+            if (pkey == nullptr) {
+                return "";
+            }
+            BIO* bio = BIO_new(BIO_s_mem());
+            if (bio == nullptr) {
+                std::cerr << "ECPrivateKeyToPKCS8 Failed to create memory BIO" << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+
+            if (i2d_PKCS8PrivateKey_bio(bio, pkey, nullptr, nullptr, 0, nullptr, nullptr) != 1) {
+                std::cerr << "ECPrivateKeyToPKCS8 Failed to write private key to BIO" << std::endl;
+                printOpenSSLError();
+                BIO_free(bio);
+                return "";
+            }
+            char* buf;
+            long len = BIO_get_mem_data(bio, &buf);
+            if (len <= 0) {
+                std::cerr << "ECPrivateKeyToPKCS8 Failed to write private key to BIO" << std::endl;
+                printOpenSSLError();
+                BIO_free(bio);
+                return "";
+            }
+            std::string der(buf, len);
+            BIO_free(bio);
+            return der;
+        }
+
+        inline std::string ECPrivateKeyToBase64(EVP_PKEY* pkey) {
+            return base64_encode(ECPrivateKeyToPKCS8(pkey));
+        }
+    }
+}
+
+
+namespace camel {
+    namespace crypto {
+        ECIESPrivateKeyDecryptor::ECIESPrivateKeyDecryptor(const std::string_view &privateKey, const std::string_view &format, const std::string_view &cipherAlgorithm) {
+            this->privateKey = privateKey;
+            this->format = format;
+            this->cipherAlgorithm = cipherAlgorithm;
+        }
+
+        std::string ECIESPrivateKeyDecryptor::decrypt(const std::string_view &combineBase64Data) {
+            EVP_PKEY* evpKey = nullptr;
+            if (evpKey == nullptr) {
+                evpKey = ECPrivateKeyFrom(privateKey, format);
+            }
+            if (evpKey == nullptr) {
+                std::cerr << "ECIESPrivateKeyDecryptor::decrypt() Failed to create EVP_PKEY " << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            ECEvpKeyGuard evpKeyGuard(evpKey, true);
+            std::string curveName = getCurveName(evpKey);
+            if (curveName.empty()) {
+                std::cerr << "ECIESPrivateKeyDecryptor::decrypt() Failed to getCurveName " << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            auto findIt = combineBase64Data.find_last_of('.');
+            if (findIt == std::string::npos) {
+                std::cerr << "ECIESPrivateKeyDecryptor::decrypt() illegal format encrypt data" << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            std::string_view publicKey = std::string_view(combineBase64Data.data() + findIt + 1, combineBase64Data.size() - findIt - 1);
+            ECKeyPairGenerator keyGenerator(curveName);
+            ECDHSharedSecretGenerator secretGenerator(ECPrivateKeyToBase64(evpKey), publicKey, "base64");
+            std::string genSharedSecret = secretGenerator.getGenSecret();
+            std::string firstCombineBlock = base64_decode(std::string_view(combineBase64Data.data(), findIt));
+            if (firstCombineBlock.size() <= 32) {
+                std::cerr << "ECIESPrivateKeyDecryptor::decrypt() illegal format encrypt data, infoKey(16 byte) and salt(16 byte) not right" << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            std::string_view infoKey = std::string_view(firstCombineBlock.data() + firstCombineBlock.size() - 32 , 16);
+            std::string_view salt = std::string_view(firstCombineBlock.data() + firstCombineBlock.size() - 16, 16);
+            HKDFSecretGenerator hkdfSecretGenerator(genSharedSecret, infoKey, salt, "SHA2-256");
+            std::string hkdfSecret = hkdfSecretGenerator.getGenSecret();
+            std::string_view cliperEncryptData = std::string_view(firstCombineBlock.data(), firstCombineBlock.size() - 32);
+            AESDecryptor aesDecryptor(cipherAlgorithm, hkdfSecret, "raw");
+
+            return aesDecryptor.decrypt(cliperEncryptData);
+        }
+
+
+    }
+}
+
+namespace camel {
+    namespace crypto {
+        ECIESPublicKeyEncryptor::ECIESPublicKeyEncryptor(const std::string_view &publicKey, const std::string_view &format, const std::string_view &cipherAlgorithm) {
+            this->publicKey = publicKey;
+            this->format = format;
+            this->cipherAlgorithm = cipherAlgorithm;
+        }
+
+        std::string ECIESPublicKeyEncryptor::encrypt(const std::string_view &plainText) const {
+            EVP_PKEY* evpKey = nullptr;
+            if (evpKey == nullptr) {
+                evpKey = ECPublicKeyFrom(publicKey, format);
+            }
+            if (evpKey == nullptr) {
+                std::cerr << "ECIESPublicKeyEncryptor::encrypt() Failed to create EVP_PKEY " << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            ECEvpKeyGuard evpKeyGuard(evpKey, true);
+            std::string curveName = getCurveName(evpKey);
+            if (curveName.empty()) {
+                std::cerr << "ECIESPublicKeyEncryptor::encrypt() Failed to getCurveName " << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            ECKeyPairGenerator keyGenerator(curveName);
+            ECDHSharedSecretGenerator secretGenerator(keyGenerator.getPrivateKey(format), publicKey, format);
+            std::string genSharedSecret = secretGenerator.getGenSecret();
+            std::string infoKey = ecRandBytesLen(16);
+            std::string salt = ecRandBytesLen(16);
+            HKDFSecretGenerator hkdfSecretGenerator(genSharedSecret, infoKey, salt, "SHA2-256");
+            std::string hkdfSecret = hkdfSecretGenerator.getGenSecret();
+
+            AESEncryptor aesEncryptor(cipherAlgorithm, hkdfSecret, "raw");
+            std::string encryptData = aesEncryptor.encrypt(plainText);
+            encryptData.append(infoKey);
+            encryptData.append(salt);
+            std::string combineResult = base64_encode(encryptData);
+            combineResult.append(".");
+            combineResult.append(base64_encode(keyGenerator.getPublicKey()));
+
+            return combineResult;
+        }
+
 
     }
 }
