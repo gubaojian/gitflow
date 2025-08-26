@@ -23,6 +23,7 @@
 #include "test/test_hmac.h"
 #include "test/test_rsa.h"
 #include "test/test_sm2.h"
+#include "test/test_sm4.h"
 
 
 using namespace camel::crypto;
@@ -47,6 +48,12 @@ void runAllTests() {
     testHKDFKeyGen();
     testECDSASigner();
     testEDDSASigner();
+    testECIESEncrypt();
+
+}
+
+void runAllPerformanceTests() {
+    testECIESPerf();
 }
 
 void runAllDemos() {
@@ -64,10 +71,8 @@ void runAllDemos() {
    // testEcKeyGen();
    // testEcKeyEncrypt();
 
-
-    testECIESEncrypt();
-
-    testECIESPerf();
+  testSM4KeyGen();
+  testSM4KeyEncrypt();
 
 
 }
@@ -80,6 +85,7 @@ int main() {
     runAllTests();
     runAllDemos();
 
+    //runAllPerformanceTests();
 
 
     camel::crypto::cleanupLibCrypto();

@@ -91,6 +91,8 @@ add_executable(crossbuild main.cpp
         test/test_chacha20.h
         test/test_cache.cpp
         test/test_cache.h
+        test/test_sm4.cpp
+        test/test_sm4.h
 )
 
 target_link_libraries(crossbuild

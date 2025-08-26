@@ -32,9 +32,14 @@ namespace camel {
         std::string genBase64ivKey(int keyBitLength=128);
 
         std::string getAESKey(const std::string_view& aesKey, const std::string_view& format);
+    }
+}
 
+
+namespace camel {
+    namespace crypto {
         class AESEncryptor {
-            public:
+        public:
             /**
             * https://developer.android.com/reference/javax/crypto/Cipher
             * @param algorithm  AES/GCM/NoPadding、AES/GCM-SIV/NoPadding AES/CCM/NoPadding
@@ -46,19 +51,24 @@ namespace camel {
                               const std::string_view& secret,
                               const std::string& format    = "base64");
             ~AESEncryptor() = default;
-            public:
-                std::string encrypt(const std::string_view& plainText) const;
-                std::string encryptToBase64(const std::string_view& plainText) const;
-                std::string encryptToHex(const std::string_view& plainText) const;
-            public:
-                std::string encryptWithAAD(const std::string_view& plainText, const std::string_view& aad) const;
-                std::string encryptToBase64WithAAD(const std::string_view& plainText, const std::string_view& aad) const;
-                std::string encryptToHexWithAAD(const std::string_view& plainText, const std::string_view& aad) const;
-            private:
-                 std::string secretKey;
-                 std::string algorithm; //无需传入位数如：128 256，支持传入AES-GCM 即可，长度根据秘钥自动计算。
+        public:
+            std::string encrypt(const std::string_view& plainText) const;
+            std::string encryptToBase64(const std::string_view& plainText) const;
+            std::string encryptToHex(const std::string_view& plainText) const;
+        public:
+            std::string encryptWithAAD(const std::string_view& plainText, const std::string_view& aad) const;
+            std::string encryptToBase64WithAAD(const std::string_view& plainText, const std::string_view& aad) const;
+            std::string encryptToHexWithAAD(const std::string_view& plainText, const std::string_view& aad) const;
+        private:
+            std::string secretKey;
+            std::string algorithm; //无需传入位数如：128 256，支持传入AES-GCM 即可，长度根据秘钥自动计算。
         };
+    }
+}
 
+
+namespace camel {
+    namespace crypto {
         class AESDecryptor {
         public:
             /**
@@ -85,8 +95,11 @@ namespace camel {
             std::string secretKey;
             std::string algorithm; //无需传入位数如：128 256，支持传入AES-GCM 即可，长度根据秘钥自动计算。
         };
+    }
+}
 
-
+namespace camel {
+    namespace crypto {
         /**
          *
         * CBC（Cipher Block Chaining）模式：
