@@ -113,6 +113,19 @@ namespace camel {
                 passed = passed && (decryptor.decryptFromBase64(encryptor.encryptToBase64(plainText)) == plainText);
             }
 
+            {
+                std::string plainText = "hello world sm4";
+                std::string secretKey = "iC3eHDlJvHvVgiO2Nl43/Q==";
+                std::string aad = "hello world sm4 aad";
+                std::cout << "----------------------- SM4/GCM/NoPadding with aad -----------------------" << std::endl;
+                SM4Encryptor encryptor("SM4/GCM/NoPadding", secretKey, "base64");
+                SM4Decryptor decryptor("SM4/GCM/NoPadding", secretKey, "base64");
+                std::cout << encryptor.encryptToBase64WithAAD(plainText, aad) << std::endl;
+                std::cout << decryptor.decryptFromBase64WithAAD(encryptor.encryptToBase64WithAAD(plainText, aad), aad) << std::endl;
+
+                passed = passed && (decryptor.decryptFromBase64WithAAD(encryptor.encryptToBase64WithAAD(plainText, aad), aad) == plainText);
+            }
+
 
             if (passed) {
                 std::cout << "testSM4KeyEncrypt() passed " << std::endl;
