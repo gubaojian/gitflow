@@ -330,10 +330,272 @@ namespace camel {
             EVP_CIPHER_CTX_free(ctx);
             return buffer;
         }
-
         
     }
 }
+
+namespace camel {
+    namespace crypto {
+         std::string SM4_gcm_ccm_encrypt(const std::string_view &plainData,
+            const std::string& secretKey,
+            const std::string& mode,
+            const std::string_view &aad) {
+            if (isSM4KeyBitLenNotValid(secretKey.size()*8)) {
+                std::cerr << "SM4_gcm_ccm_encrypt secretKey size invalid " << std::endl;
+                return "";
+            }
+
+            int gcm_iv_len = 12; // ccm模式的once
+            int gcm_tag_len = 16; // ccm的tag
+
+            EVP_CIPHER_CTX *ctx = nullptr;
+            EVP_CIPHER *cipher = nullptr;
+            ctx = EVP_CIPHER_CTX_new();
+            if (ctx == nullptr) {
+                std::cerr << "SM4_gcm_ccm_encrypt EVP_CIPHER_CTX_new() failed" << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            std::string algorithmName = SM4Name(secretKey.length()*8, mode);
+
+            cipher = EVP_CIPHER_fetch(nullptr, algorithmName.data(), nullptr);
+            if (cipher == nullptr) {
+                std::cerr << "SM4_gcm_ccm_encrypt EVP_CIPHER_fetch() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            std::string combineBuffer; // iv + buffer + tag
+            combineBuffer.resize(std::max((int)plainData.size()*2 + 64, 512));
+
+            { // init ctx
+                unsigned char* iv = (unsigned char* )combineBuffer.data();
+                if (RAND_bytes(iv, gcm_iv_len) != 1) {
+                    std::cerr << "SM4_gcm_ccm_encrypt RAND_bytes() failed" << std::endl;
+                    printOpenSSLError();
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_int(OSSL_CIPHER_PARAM_AEAD_IVLEN,
+                                            &gcm_iv_len),
+                    OSSL_PARAM_construct_int(OSSL_CIPHER_PARAM_AEAD_TAGLEN,
+                                           &gcm_tag_len),
+                    OSSL_PARAM_END
+                };
+                if (SM4AlgorithmHas(algorithmName, "CCM")) { //CCM模式需要设置tag
+                    params[1] =  OSSL_PARAM_construct_octet_string(OSSL_CIPHER_PARAM_AEAD_TAG,
+                                                  NULL, gcm_tag_len);
+                }
+                const unsigned char *key = (const unsigned char *)secretKey.data();
+                /*
+                 * Initialise encrypt operation with the cipher & mode,
+                 * nonce/iv length and tag length parameters.
+                 */
+                if (!EVP_EncryptInit_ex2(ctx, cipher, nullptr, nullptr, params)) {
+                    std::cerr << "SM4_gcm_ccm_encrypt EVP_EncryptInit_ex2() failed" << std::endl;
+                    printOpenSSLError();
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+                // 分两步初始化，参考解密
+                /* Initialise key and nonce/iv */
+                if (!EVP_EncryptInit_ex(ctx, NULL, NULL, key, iv)) {
+                    std::cerr << "SM4_gcm_ccm_encrypt EVP_EncryptInit_ex() failed" << std::endl;
+                    printOpenSSLError();
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+            }
+
+
+            int ivLength = EVP_CIPHER_get_iv_length(cipher);
+            if (ivLength != gcm_iv_len) {
+                std::cerr << "SM4_gcm_ccm_encrypt Invalid IV length for SM4-GCM: must be 12 bytes"  << ivLength << std::endl;
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+
+            if (!aad.empty()) {
+                int outlen;
+                const unsigned char *aadIn = (const unsigned char *)aad.data();
+                if (!EVP_EncryptUpdate(ctx, NULL, &outlen, aadIn, aad.size())) {
+                    std::cerr << "SM4_gcm_ccm_encrypt EVP_EncryptUpdate() aad failed" << std::endl;
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+            }
+
+            const unsigned char *in = (const unsigned char *)(plainData.data());
+            int inl = plainData.size();
+            unsigned char *out = (unsigned char *) combineBuffer.data() + gcm_iv_len;
+            int outl = combineBuffer.size() - gcm_iv_len - gcm_tag_len;
+            int totalLen = gcm_iv_len + gcm_tag_len;
+            if (!EVP_EncryptUpdate(ctx, out, &outl, in, inl)) {
+                std::cerr << "SM4_gcm_ccm_encrypt EVP_EncryptUpdate() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            totalLen += outl;
+
+            int tempLen = combineBuffer.size() - gcm_iv_len - gcm_tag_len - outl;
+            if (!EVP_EncryptFinal_ex(ctx, out + outl, &tempLen)) {
+                std::cerr << "SM4_gcm_ccm_encrypt EVP_EncryptFinal_ex() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            totalLen += tempLen;
+
+            unsigned char* tag = (unsigned char*)(combineBuffer.data() + totalLen - gcm_tag_len);
+            OSSL_PARAM params[] = {
+                OSSL_PARAM_construct_octet_string(OSSL_CIPHER_PARAM_AEAD_TAG, tag, gcm_tag_len),
+                OSSL_PARAM_END
+            };
+
+            if (!EVP_CIPHER_CTX_get_params(ctx, params)) {
+                std::cerr << "SM4_gcm_ccm_encrypt EVP_CIPHER_CTX_get_params() failed " << algorithmName << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+
+            combineBuffer.resize(totalLen);
+            EVP_CIPHER_free(cipher);
+            EVP_CIPHER_CTX_free(ctx);
+            return combineBuffer;
+        }
+
+        std::string SM4_gcm_ccm_decrypt(const std::string_view &encryptData,
+            const std::string& secretKey,
+            const std::string& mode,
+            const std::string_view &aad) {
+
+            if (isSM4KeyBitLenNotValid(secretKey.size()*8)) {
+                std::cerr << "SM4_gcm_ccm_decrypt secretKey size invalid" << std::endl;
+                return "";
+            }
+            size_t gcm_iv_len = 12; // ccm模式的once
+            size_t gcm_tag_len = 16; // ccm的tag
+            if (encryptData.size() <= (gcm_iv_len + gcm_tag_len)) {
+                std::cerr << "SM4_gcm_ccm_decrypt illegal, encryptData too short " << std::endl;
+                return "";
+            }
+            EVP_CIPHER_CTX *ctx = nullptr;
+            EVP_CIPHER *cipher = nullptr;
+            ctx = EVP_CIPHER_CTX_new();
+            if (ctx == nullptr) {
+                std::cerr << "SM4_gcm_ccm_decrypt EVP_CIPHER_CTX_new() failed" << std::endl;
+                printOpenSSLError();
+                return "";
+            }
+            std::string algorithmName = SM4Name(secretKey.length()*8, mode);
+
+            cipher = EVP_CIPHER_fetch(nullptr, algorithmName.data(), nullptr);
+            if (cipher == nullptr) {
+                std::cerr << "SM4_gcm_ccm_decrypt EVP_CIPHER_fetch() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+
+            { // init ctx
+                unsigned char *tag = (unsigned char *)(encryptData.data()+ (encryptData.size() - gcm_tag_len));
+                OSSL_PARAM params[] = {
+                    OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_AEAD_IVLEN,
+                                            &gcm_iv_len),
+                    OSSL_PARAM_construct_octet_string(OSSL_CIPHER_PARAM_AEAD_TAG, tag, gcm_tag_len),
+                    OSSL_PARAM_END
+                };
+                const unsigned char *key = (const unsigned char *)secretKey.data();
+                const unsigned char *iv = (const unsigned char *)encryptData.data();
+
+                /*
+                 * Initialise encrypt operation with the cipher & mode,
+                 * nonce/iv length and tag length parameters.
+                 */
+                if (!EVP_DecryptInit_ex2(ctx, cipher, nullptr, nullptr, params)) {
+                    std::cerr << "SM4_gcm_ccm_decrypt EVP_DecryptInit_ex2() failed" << std::endl;
+                    printOpenSSLError();
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+                //CCM 模式分两步初始化，不然解密不成功，这种写法来自官方demo。
+                /* Initialise key and nonce/iv */
+                if (!EVP_DecryptInit_ex(ctx, NULL, NULL, key, iv)) {
+                    std::cerr << "SM4_gcm_ccm_decrypt EVP_DecryptInit_ex() failed" << std::endl;
+                    printOpenSSLError();
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+            }
+
+
+            int ivLength = EVP_CIPHER_get_iv_length(cipher);
+            if (ivLength != gcm_iv_len) {
+                std::cerr << "SM4_gcm_ccm_decrypt Invalid IV length for SM4-GCM: must be 12 bytes" << std::endl;
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+
+            if (!aad.empty()) {
+                int outlen;
+                const unsigned char *aadIn = (const unsigned char *)aad.data();
+                if (!EVP_DecryptUpdate(ctx, NULL, &outlen, aadIn, aad.size())) {
+                    std::cerr << "SM4_gcm_ccm_decrypt EVP_DecryptUpdate() aad failed" << std::endl;
+                    EVP_CIPHER_free(cipher);
+                    EVP_CIPHER_CTX_free(ctx);
+                    return "";
+                }
+            }
+
+
+            std::string buffer;
+            buffer.resize(std::max((int)encryptData.size() + 8, 512));
+            const unsigned char *in = (const unsigned char *)(encryptData.data() + gcm_iv_len);
+            int inl = encryptData.size() - gcm_iv_len - gcm_tag_len;
+            unsigned char *out = (unsigned char *)buffer.data();
+            int outl = buffer.size();
+            int totalLen = 0;
+            if (!EVP_DecryptUpdate(ctx, out, &outl, in, inl)) {
+                std::cerr << "SM4_gcm_ccm_decrypt EVP_DecryptUpdate() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            totalLen += outl;
+
+            int tempLen = buffer.size() - outl;
+            if (!EVP_DecryptFinal_ex(ctx, out + outl, &tempLen)) {
+                std::cerr << "SM4_gcm_ccm_decrypt EVP_DecryptFinal_ex() failed" << std::endl;
+                printOpenSSLError();
+                EVP_CIPHER_free(cipher);
+                EVP_CIPHER_CTX_free(ctx);
+                return "";
+            }
+            totalLen += tempLen;
+            buffer.resize(totalLen);
+            EVP_CIPHER_free(cipher);
+            EVP_CIPHER_CTX_free(ctx);
+            return buffer;
+        }
+    }
+}
+
 
 
 namespace camel {
@@ -366,18 +628,20 @@ namespace camel {
                 return SM4_normal_encrypt(plainText, secretKey, "OFB");
             }
             if (SM4AlgorithmHas(algorithm, "GCM-SIV")) {
-                //return SM4_gcm_ccm_encrypt(plainText, secretKey, "GCM-SIV", "");
+                std::cerr << "SM4Encryptor::encrypt() not supported algorithm " << algorithm << std::endl;
+                return "";
             }
 
             if (SM4AlgorithmHas(algorithm, "GCM")) {
-                //return SM4_gcm_ccm_encrypt(plainText,  secretKey, "GCM", "");
+                return SM4_gcm_ccm_encrypt(plainText,  secretKey, "GCM", "");
             }
             if (SM4AlgorithmHas(algorithm, "CCM")) {
-                //return SM4_gcm_ccm_encrypt(plainText, secretKey, "CCM", "");
+                return SM4_gcm_ccm_encrypt(plainText, secretKey, "CCM", "");
             }
 
             if (SM4AlgorithmHas(algorithm, "SM4-SIV") || SM4AlgorithmHas(algorithm, "SM4/SIV")) {
-                //return SM4_siv_encrypt(plainText, secretKey, "");
+                std::cerr << "SM4Encryptor::encrypt() not supported algorithm " << algorithm << std::endl;
+                return "";
             }
 
             std::cerr << "SM4Encryptor::encrypt() not supported algorithm " << algorithm << std::endl;
@@ -395,17 +659,19 @@ namespace camel {
 
         std::string SM4Encryptor::encryptWithAAD(const std::string_view &plainText, const std::string_view &aad) const {
             if (SM4AlgorithmHas(algorithm, "GCM-SIV")) {
-                //return SM4_gcm_ccm_encrypt(plainText, secretKey, "GCM-SIV", aad);
+                std::cerr << "SM4Encryptor::encrypt() not supported algorithm " << algorithm << std::endl;
+                return "";
             }
 
             if (SM4AlgorithmHas(algorithm, "GCM")) {
-                //return SM4_gcm_ccm_encrypt(plainText, secretKey, "GCM", aad);
+                return SM4_gcm_ccm_encrypt(plainText, secretKey, "GCM", aad);
             }
             if (SM4AlgorithmHas(algorithm, "CCM")) {
-                //return SM4_gcm_ccm_encrypt(plainText, secretKey, "CCM", aad);
+                return SM4_gcm_ccm_encrypt(plainText, secretKey, "CCM", aad);
             }
             if (SM4AlgorithmHas(algorithm, "SM4-SIV") || SM4AlgorithmHas(algorithm, "SM4/SIV")) {
-                //return SM4_siv_encrypt(plainText, secretKey, aad);
+                std::cerr << "SM4Encryptor::encrypt() not supported algorithm " << algorithm << std::endl;
+                return "";
             }
             std::cerr << "SM4Encryptor::encryptWithAAD() not supported algorithm " << algorithm << std::endl;
             return "";
@@ -466,18 +732,20 @@ namespace camel {
             }
 
             if (SM4AlgorithmHas(algorithm, "GCM-SIV")) {
-                //return SM4_gcm_ccm_decrypt(encryptedData, secretKey, "GCM-SIV", "");
+                std::cerr << "SM4Decryptor::decrypt() not supported algorithm " << algorithm << std::endl;
+                return "";
             }
 
             if (SM4AlgorithmHas(algorithm, "GCM")) {
-                //return SM4_gcm_ccm_decrypt(encryptedData, secretKey, "GCM", "");
+                return SM4_gcm_ccm_decrypt(encryptedData, secretKey, "GCM", "");
             }
             if (SM4AlgorithmHas(algorithm, "CCM")) {
-                //return SM4_gcm_ccm_decrypt(encryptedData, secretKey, "CCM", "");
+                return SM4_gcm_ccm_decrypt(encryptedData, secretKey, "CCM", "");
             }
 
             if (SM4AlgorithmHas(algorithm, "SM4-SIV") || SM4AlgorithmHas(algorithm, "SM4/SIV")) {
-                //return SM4_siv_decrypt(encryptedData, secretKey, "");
+                std::cerr << "SM4Decryptor::decrypt() not supported algorithm " << algorithm << std::endl;
+                return "";
             }
 
             std::cerr << "SM4Decryptor::decrypt() not supported algorithm " << algorithm << std::endl;
@@ -494,17 +762,19 @@ namespace camel {
 
         std::string SM4Decryptor::decryptWithAAD(const std::string_view &encryptedData, const std::string_view &aad) const {
             if (SM4AlgorithmHas(algorithm, "GCM-SIV")) {
-                //return SM4_gcm_ccm_decrypt(encryptedData, secretKey, "GCM-SIV", aad);
+                std::cerr << "SM4Decryptor::decrypt() not supported algorithm " << algorithm << std::endl;
+                return "";
             }
 
             if (SM4AlgorithmHas(algorithm, "GCM")) {
-                //return SM4_gcm_ccm_decrypt(encryptedData, secretKey, "GCM", aad);
+                return SM4_gcm_ccm_decrypt(encryptedData, secretKey, "GCM", aad);
             }
             if (SM4AlgorithmHas(algorithm, "CCM")) {
-                //return SM4_gcm_ccm_decrypt(encryptedData, secretKey, "CCM", aad);
+                return SM4_gcm_ccm_decrypt(encryptedData, secretKey, "CCM", aad);
             }
             if (SM4AlgorithmHas(algorithm, "SM4-SIV") || SM4AlgorithmHas(algorithm, "SM4/SIV")) {
-                //return SM4_siv_decrypt(encryptedData, secretKey, aad);
+                std::cerr << "SM4Decryptor::decrypt() not supported algorithm " << algorithm << std::endl;
+                return "";
             }
             std::cerr << "SM4Decryptor::decryptWithAAD() not supported algorithm " << algorithm << std::endl;
             return "";

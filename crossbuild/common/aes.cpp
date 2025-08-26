@@ -367,7 +367,7 @@ namespace camel {
             EVP_CIPHER *cipher = nullptr;
             ctx = EVP_CIPHER_CTX_new();
             if (ctx == nullptr) {
-                std::cerr << "aes_gcm_ccm_decrypt EVP_CIPHER_CTX_new() failed" << std::endl;
+                std::cerr << "aes_gcm_ccm_encrypt EVP_CIPHER_CTX_new() failed" << std::endl;
                 printOpenSSLError();
                 return "";
             }
@@ -375,7 +375,7 @@ namespace camel {
 
             cipher = EVP_CIPHER_fetch(nullptr, algorithmName.data(), nullptr);
             if (cipher == nullptr) {
-                std::cerr << "aes_gcm_ccm_decrypt EVP_CIPHER_fetch() failed" << std::endl;
+                std::cerr << "aes_gcm_ccm_encrypt EVP_CIPHER_fetch() failed" << std::endl;
                 printOpenSSLError();
                 EVP_CIPHER_CTX_free(ctx);
                 return "";
@@ -386,7 +386,7 @@ namespace camel {
             { // init ctx
                 unsigned char* iv = (unsigned char* )combineBuffer.data();
                 if (RAND_bytes(iv, gcm_iv_len) != 1) {
-                    std::cerr << "aes_siv_encrypt RAND_bytes() failed" << std::endl;
+                    std::cerr << "aes_gcm_ccm_encrypt RAND_bytes() failed" << std::endl;
                     printOpenSSLError();
                     EVP_CIPHER_free(cipher);
                     EVP_CIPHER_CTX_free(ctx);
@@ -400,13 +400,17 @@ namespace camel {
                                            &gcm_tag_len),
                     OSSL_PARAM_END
                 };
+                if (aesAlgorithmHas(algorithmName, "CCM")) { //CCM模式需要设置tag
+                    params[1] =  OSSL_PARAM_construct_octet_string(OSSL_CIPHER_PARAM_AEAD_TAG,
+                                                  NULL, gcm_tag_len);
+                }
                 const unsigned char *key = (const unsigned char *)secretKey.data();
                 /*
                  * Initialise encrypt operation with the cipher & mode,
                  * nonce/iv length and tag length parameters.
                  */
                 if (!EVP_EncryptInit_ex2(ctx, cipher, nullptr, nullptr, params)) {
-                    std::cerr << "aes_gcm_ccm_decrypt EVP_EncryptInit_ex2() failed" << std::endl;
+                    std::cerr << "aes_gcm_ccm_encrypt EVP_EncryptInit_ex2() failed" << std::endl;
                     printOpenSSLError();
                     EVP_CIPHER_free(cipher);
                     EVP_CIPHER_CTX_free(ctx);
@@ -415,7 +419,7 @@ namespace camel {
                 // 分两步初始化，参考解密
                 /* Initialise key and nonce/iv */
                 if (!EVP_EncryptInit_ex(ctx, NULL, NULL, key, iv)) {
-                    std::cerr << "aes_gcm_ccm_decrypt EVP_EncryptInit_ex() failed" << std::endl;
+                    std::cerr << "aes_gcm_ccm_encrypt EVP_EncryptInit_ex() failed" << std::endl;
                     printOpenSSLError();
                     EVP_CIPHER_free(cipher);
                     EVP_CIPHER_CTX_free(ctx);
@@ -426,7 +430,7 @@ namespace camel {
 
             int ivLength = EVP_CIPHER_get_iv_length(cipher);
             if (ivLength != gcm_iv_len) {
-                std::cerr << "aes_gcm_ccm_decrypt Invalid IV length for AES-GCM: must be 12 bytes" << std::endl;
+                std::cerr << "aes_gcm_ccm_encrypt Invalid IV length for AES-GCM: must be 12 bytes" << std::endl;
                 EVP_CIPHER_free(cipher);
                 EVP_CIPHER_CTX_free(ctx);
                 return "";
@@ -436,7 +440,7 @@ namespace camel {
                 int outlen;
                 const unsigned char *aadIn = (const unsigned char *)aad.data();
                 if (!EVP_EncryptUpdate(ctx, NULL, &outlen, aadIn, aad.size())) {
-                    std::cerr << "aes_gcm_ccm_decrypt EVP_EncryptUpdate() aad failed" << std::endl;
+                    std::cerr << "aes_gcm_ccm_encrypt EVP_EncryptUpdate() aad failed" << std::endl;
                     EVP_CIPHER_free(cipher);
                     EVP_CIPHER_CTX_free(ctx);
                     return "";
@@ -449,7 +453,7 @@ namespace camel {
             int outl = combineBuffer.size() - gcm_iv_len - gcm_tag_len;
             int totalLen = gcm_iv_len + gcm_tag_len;
             if (!EVP_EncryptUpdate(ctx, out, &outl, in, inl)) {
-                std::cerr << "aes_gcm_ccm_decrypt EVP_EncryptUpdate() failed" << std::endl;
+                std::cerr << "aes_gcm_ccm_encrypt EVP_EncryptUpdate() failed" << std::endl;
                 printOpenSSLError();
                 EVP_CIPHER_free(cipher);
                 EVP_CIPHER_CTX_free(ctx);
@@ -459,7 +463,7 @@ namespace camel {
 
             int tempLen = combineBuffer.size() - gcm_iv_len - gcm_tag_len - outl;
             if (!EVP_EncryptFinal_ex(ctx, out + outl, &tempLen)) {
-                std::cerr << "aes_gcm_ccm_decrypt EVP_EncryptFinal_ex() failed" << std::endl;
+                std::cerr << "aes_gcm_ccm_encrypt EVP_EncryptFinal_ex() failed" << std::endl;
                 printOpenSSLError();
                 EVP_CIPHER_free(cipher);
                 EVP_CIPHER_CTX_free(ctx);
@@ -473,7 +477,7 @@ namespace camel {
                 OSSL_PARAM_END
             };
             if (!EVP_CIPHER_CTX_get_params(ctx, params)) {
-                std::cerr << "aes_siv_encrypt EVP_CIPHER_CTX_get_params() failed" << std::endl;
+                std::cerr << "aes_gcm_ccm_encrypt EVP_CIPHER_CTX_get_params() failed" << std::endl;
                 printOpenSSLError();
                 EVP_CIPHER_free(cipher);
                 EVP_CIPHER_CTX_free(ctx);

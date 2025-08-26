@@ -88,7 +88,30 @@ namespace camel {
                 passed = passed && (decryptor.decryptFromBase64(encryptor.encryptToBase64(plainText)) == plainText);
             }
 
+            {
+                std::string plainText = "hello world sm4";
+                std::string secretKey = "iC3eHDlJvHvVgiO2Nl43/Q==";
+                std::cout << "----------------------- SM4/GCM/NoPadding -----------------------" << std::endl;
+                SM4Encryptor encryptor("SM4/GCM/NoPadding", secretKey, "base64");
+                SM4Decryptor decryptor("SM4/GCM/NoPadding", secretKey, "base64");
+                std::cout << encryptor.encryptToBase64(plainText) << std::endl;
+                std::cout << decryptor.decryptFromBase64(encryptor.encryptToBase64(plainText)) << std::endl;
 
+                passed = passed && (decryptor.decryptFromBase64(encryptor.encryptToBase64(plainText)) == plainText);
+            }
+
+
+            {
+                std::string plainText = "hello world sm4";
+                std::string secretKey = "iC3eHDlJvHvVgiO2Nl43/Q==";
+                std::cout << "----------------------- SM4/CCM/NoPadding -----------------------" << std::endl;
+                SM4Encryptor encryptor("SM4/CCM/NoPadding", secretKey, "base64");
+                SM4Decryptor decryptor("SM4/CCM/NoPadding", secretKey, "base64");
+                std::cout << encryptor.encryptToBase64(plainText) << std::endl;
+                std::cout << decryptor.decryptFromBase64(encryptor.encryptToBase64(plainText)) << std::endl;
+
+                passed = passed && (decryptor.decryptFromBase64(encryptor.encryptToBase64(plainText)) == plainText);
+            }
 
 
             if (passed) {

@@ -123,9 +123,12 @@ namespace camel {
 
             {
                 std::string encrypt_data = "P+Qd63TSOQBCvyWUKLFGuCL/nx0zWoCUlCHUviq1i+RBExojroQL/1/2VQ==";
+
                 AESDecryptor decryptor("AES-CCM", secret, "base64");
+                AESEncryptor encryptor("AES-CCM", secret, "base64");
                 std::cout << "-----------------------CCM--------------------------" << std::endl;
                 std::cout << decryptor.decryptFromBase64(encrypt_data) << std::endl;
+                std::cout << encryptor.encryptToBase64(plainText) << std::endl;
             }
 
             {
