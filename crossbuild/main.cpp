@@ -50,6 +50,9 @@ void runAllTests() {
     testEDDSASigner();
     testECIESEncrypt();
 
+    testSM4KeyGen();
+    testSM4KeyEncrypt();
+
 }
 
 void runAllPerformanceTests() {
@@ -71,8 +74,7 @@ void runAllDemos() {
    // testEcKeyGen();
    // testEcKeyEncrypt();
 
-  testSM4KeyGen();
-  testSM4KeyEncrypt();
+
 
 
 }
