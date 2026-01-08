@@ -1,0 +1,37 @@
+{
+    "env": {
+        "myDefaultIncludePath": [
+            "${workspaceRoot}/**",
+            "${workspaceRoot}/src"
+        ],
+        "myIncludePath": [
+             "${workspaceFolder}/hwss/third_party/uWebSockets/uSockets/src",
+             "${workspaceFolder}/hwss/third_party/uWebSockets/src",
+             "${workspaceFolder}/hwss/third_party/yyjson-master/src",
+             "${workspaceFolder}/hwss/src",
+             "${workspaceRoot}/hwss/src"
+       ]
+    },
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${myIncludePath}",
+                "${default}",
+                "${workspaceRoot}/hwss/src",
+                "${workspaceRoot}/**",
+                "${workspaceFolder}/hwss/third_party/googletest-1.15.2/googletest/include/**"
+            ],
+            "defines": [],
+            "macFrameworkPath": [
+                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64",
+            "configurationProvider": "ms-vscode.cmake-tools"
+        }
+    ],
+    "version": 4
+}
