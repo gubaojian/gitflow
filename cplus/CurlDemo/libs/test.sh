@@ -1,0 +1,1 @@
+./configure --with-openssl --disable-all --without-libpsl  --enable-http   --enable-https --without-ldap --disable-rtmp --without-librtmp --disable-ldap --disable-ldaps --without-brotli --without-zstd --disable-ipv6 --disable-smb --disable-ftp  --disable-rtmp --disable-docs --prefix=/Users/efurture/CLionProjects/CurlDemo/libs/curllib
